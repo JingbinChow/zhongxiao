@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+    <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+    <mapper namespace="Video">
+        <!--查询视频列表-->
+        <select id="videoIndex" parameterType="com.fh.entity.bo.VideoBO" resultType="com.fh.entity.bo.VideoBO">
+            select * from video_list where 1=1
+            <if test="video_type!=null and video_type != '' ">
+                and video_type = #{video_type}
+            </if>
+            <if test="pageSize!=0">
+                limit #{pageIndex},#{pageSize}
+            </if>
+        </select>
+        <select id="findToken" parameterType="com.fh.entity.bo.VideoBO" resultType="com.fh.entity.bo.UserInfoBO">
+            select * from mb_user_token  where token=#{token}
+        </select>
+        <!--视频详细信息查询-->
+        <select id="queryVideoInfo" parameterType="com.fh.entity.bo.VideoBO" resultType="com.fh.entity.bo.VideoBO">
+            select * from video_list where video_id=#{video_id}
+        </select>
+    <select id="queryVideoColumn" resultType="com.fh.entity.bo.VideoColumn">
+    select * from video_column where isdelete=0
+    </select>
+</mapper>

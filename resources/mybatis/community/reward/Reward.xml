@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="Reward">
+    <!--获取当日净值-->
+    <select id="integralueryEquity" resultType="com.fh.entity.bo.TbEquityBO">
+		select * from tb_equity  where createdate =(select max(createdate) FROM tb_equity)
+	</select>
+
+    <!--获取7日净值-->
+    <resultMap type="com.fh.entity.bo.TbEquityBO" id="7day">
+        <id column="eid" property="eid"/>
+        <result column="equity" property="equity"/>
+        <result column="createdate" property="createdate"/>
+        <result column="operatorid" property="operatorid"/>
+    </resultMap>
+    <select id="integralQueryEquitys" resultMap="7day">
+		select * from tb_equity  order by createdate  desc  LIMIT 0 ,6
+	</select>
+
+    <!--通过token查询Tuser-->
+    <resultMap type="com.fh.entity.bo.UserInfoBO" id="Info">
+        <result column="username" property="member_name"/>
+        <result column="userid" property="member_id"/>
+        <result column="teamsign" property="team_sign"/>
+        <result column="inviterid" property="inviter_id"/>
+        <result column="token" property="token"/>
+        <result column="bankcard" property="member_bankcard"/>
+        <result column="bankname" property="member_bankname"/>
+        <result column="sex" property="member_sex"/>
+        <result column="name" property="member_truename"/>
+        <result column="mobile" property="member_mobile"/>
+        <result column="createTime" property="member_time"/>
+        <result column="idcard" property="member_idcard"/>
+        <result column="email" property="member_email"/>
+        <result column="cardtype" property="member_cardtype"/>
+        <result column="address" property="member_address"/>
+    </resultMap>
+
+    <!--通过token查询member-->
+    <select id="queryMemberByToken" parameterType="com.fh.entity.vo.TokenVo" resultType="com.fh.entity.bo.UserInfoBO">
+		select * from member where member_id=(select member_id from mb_user_token where token=#{token})
+	</select>
+    <!--通过userid查询个人奖金数-->
+    <select id="queryReward" parameterType="com.fh.entity.bo.TbUserBO" resultType="com.fh.entity.bo.TbuserbalanceBo">
+		select reward from tb_userbalance where userid=#{userid}
+	</select>
+
+    <select id="findTbuserbalance" parameterType="com.fh.entity.bo.TbUserBO" resultType="com.fh.entity.bo.TbuserbalanceBo">
+        select * from tb_userbalance where userid=#{userid}
+    </select>
+
+
+    <select id="findToken" parameterType="com.fh.entity.vo.TokenVo" resultType="com.fh.entity.bo.UserInfoBO">
+       select * from mb_user_token  where token=#{token}
+    </select>
+
+    <insert id="setReward" parameterType="com.fh.entity.bo.RansferRecordBO">
+         INSERT into  ransfer_record    (member_id ,roll_out, roll_inot ,transfer_points ,dateandtime ,status,remark ,actual_number, poundage)
+          VALUE (#{member_id} ,#{roll_out} ,#{roll_inot} ,#{transfer_points} , UNIX_TIMESTAMP() ,#{status},#{remark} ,#{actual_number} ,#{poundage})
+    </insert>
+
+
+
+    <!--&lt;!&ndash;转账记录&ndash;&gt;-->
+    <!--<insert id="setRecord" parameterType="com.fh.entity.bo.RansferRecordBO">-->
+        <!--INSERT into  ransfer_record    (member_id ,roll_out, roll_inot ,transfer_points ,dateandtime ,status,remark ,actual_number, poundage)-->
+        <!--VALUE (#{member_id} ,#{roll_out} ,#{roll_inot} ,#{transfer_points} , UNIX_TIMESTAMP() ,#{status},#{remark} ,#{actual_number} ,#{poundage})-->
+    <!--</insert>-->
+
+
+
+    <insert id="setRecordBO" parameterType="com.fh.entity.bo.RansferRecordBO">
+        INSERT into  ransfer_record    (member_id ,roll_out, roll_inot ,transfer_points ,dateandtime ,status,remark ,actual_number, poundage)
+        VALUE (#{member_id} ,#{roll_out} ,#{roll_inot} ,#{transfer_points} , now() ,#{status},#{remark} ,#{actual_number} ,#{poundage})
+    </insert>
+
+
+    <update id="setZore" parameterType="com.fh.entity.bo.RansferRecordBO">
+       update   tb_userbalance  set  realreward=0  where userid =#{member_id}
+    </update>
+
+
+    <select id="findMenber" parameterType="com.fh.entity.bo.RansferRecordBO" resultType="com.fh.entity.bo.UserInfoBO">
+        select * from member  where member_id = #{member_id}
+    </select>
+
+
+<!--通过member_Id查username-->
+
+    <select id="findMenberName" parameterType="com.fh.entity.vo.TokenVo" resultType="java.lang.String">
+        select member_name from member  where member_id = #{userid}
+    </select>
+
+
+
+
+    <!--通过Uid查询有效退单记录是否存在-->
+    <select id="queryAmountById" parameterType="com.fh.entity.vo.TokenVo" resultType="com.fh.entity.bo.ChargeBackBo">
+        select eid,amount as finalAmount,real_num as balance,equity from tb_amountrecord where uid=#{userid} and type=6 and status=4 and isdelete=0
+    </select>
+
+
+    <select id="queryRansferListById" parameterType="com.fh.entity.vo.TokenVo" resultType="com.fh.entity.bo.RansferRewardListBo">
+       SELECT ransferid, dateandtime, r.status ,actual_number,remark FROM ransfer_record AS r WHERE member_id=#{userid}
+        <if test="pageSize!=0 and pageIndex!=0">
+            limit #{pageIndex},#{pageSize}
+        </if>
+    </select>
+
+    <!--通过token查userid-->
+    <select id ="queryUseridByToken" parameterType="com.fh.entity.vo.TokenVo" resultType="com.fh.entity.vo.TokenVo">
+        SELECT member_id as userid,token from mb_user_token where token=#{token}
+    </select>
+
+
+</mapper>

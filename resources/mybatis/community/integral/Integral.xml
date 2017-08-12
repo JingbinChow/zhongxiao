@@ -1,0 +1,321 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="Integral">
+    <!--获取当日净值-->
+    <select id="integralueryEquity" resultType="com.fh.entity.bo.TbEquityBO">
+		select * from tb_equity  where createdate =(select max(createdate) FROM tb_equity) ORDER BY createdate desc limit 1
+	</select>
+
+    <!--获取7日净值-->
+    <resultMap type="com.fh.entity.bo.TbEquityBO" id="7day">
+        <id column="eid" property="eid"/>
+        <result column="equity" property="equity"/>
+        <result column="createdate" property="createdate"/>
+        <result column="operatorid" property="operatorid"/>
+    </resultMap>
+    <!--
+    <select id="integralQueryEquitys" resultMap="7day">
+		select * from tb_equity  order by createdate  desc  LIMIT 0 ,6
+	</select>
+    -->
+
+    <!--查询最近7天的净值-->
+    <select id="integralQueryEquitys"  resultType="com.fh.entity.bo.TbEquityBO">
+        SELECT * FROM tb_equity e where createdate > DATE_ADD((select createdate from tb_equity ORDER BY createdate DESC limit 1) ,INTERVAL -7 day)
+        and (select createdate from tb_equity ORDER BY createdate DESC limit 1) >= createdate
+    </select>
+
+    <!--通过token查询Tuser-->
+    <resultMap type="com.fh.entity.bo.UserInfoBO" id="Info">
+        <result column="username" property="member_name"/>
+        <result column="userid" property="member_id"/>
+        <result column="teamsign" property="team_sign"/>
+        <result column="inviterid" property="inviter_id"/>
+        <result column="token" property="token"/>
+        <result column="bankcard" property="member_bankcard"/>
+        <result column="bankname" property="member_bankname"/>
+        <result column="sex" property="member_sex"/>
+        <result column="name" property="member_truename"/>
+        <result column="mobile" property="member_mobile"/>
+        <result column="createTime" property="member_time"/>
+        <result column="idcard" property="member_idcard"/>
+        <result column="email" property="member_email"/>
+        <result column="cardtype" property="member_cardtype"/>
+        <result column="address" property="member_address"/>
+    </resultMap>
+    <!--通过token查询member-->
+    <select id="queryMemberByToken" parameterType="com.fh.entity.vo.TokenVo" resultType="com.fh.entity.bo.UserInfoBO">
+		select * from member where member_id=(select member_id from mb_user_token where token=#{token})
+	</select>
+    <!--通过userid查询个人奖金数-->
+    <select id="queryReward" parameterType="com.fh.entity.bo.TbUserBO" resultType="com.fh.entity.bo.TbuserbalanceBo">
+		select * from tb_userbalance where userid=#{member_id}
+	</select>
+
+
+    <select id="findToken" parameterType="com.fh.entity.vo.TokenVo" resultType="com.fh.entity.bo.UserInfoBO">
+       select * from mb_user_token  where token=#{token}
+    </select>
+
+
+    <!--通过token查userid-->
+    <select id ="queryUseridByToken" parameterType="com.fh.entity.vo.TokenVo" resultType="com.fh.entity.vo.TokenVo">
+        SELECT member_id as userid,token from mb_user_token where token=#{token}
+    </select>
+    <!--通过userid查询已确认订单-->
+    <select id ="queryRecordTime" parameterType="com.fh.entity.vo.TokenVo" resultType="java.lang.String">
+        SELECT recordtime FROM tb_amountrecord WHERE uid=#{userid} AND STATUS=2 ORDER BY recordtime DESC LIMIT 1
+    </select>
+    <!--查询退单详情-->
+    <select id ="queryChargeBack" parameterType="com.fh.entity.vo.TokenVo" resultType="com.fh.entity.bo.ChargeBackBo">
+        SELECT m.member_truename as name,m.member_bankcard as bankcard ,m.member_bankname as bankname, b.intbalance as balance FROM member AS m LEFT JOIN tb_userbalance AS b ON m.member_id=b.userid WHERE m.member_id=#{userid}
+    </select>
+    <!--查询当时管理费和手续费-->
+    <select id="queryTaxNum" resultType="com.fh.entity.bo.taxNumBo">
+        SELECT * FROM sys_code_item WHERE code_set_id=5
+    </select>
+    <!--获取当日净值-->
+    <select id="queryCurrentEquity" resultType="com.fh.entity.bo.TbEquityBO">
+        select * from tb_equity order by createdate desc limit 1;
+    </select>
+    <!--提交退单记录-->
+    <insert id="addChargeBack" parameterType="com.fh.entity.bo.ChargeBackBo">
+        INSERT into tb_amountrecord (uid,type,amount,status,bankcard,bankname,equity,declaration_price,declaration_num,declaration_date,real_num,source,poundage,management) VALUES
+        (#{userId},6,#{returnAmount},4,#{bankCard},#{bankName},#{equity},#{returnAmount},#{balance},#{currentTime},#{balance},#{source},#{poundage},#{management})
+    </insert>
+    <!--撤销退单记录-->
+    <update id="removeChargeBack" parameterType="com.fh.entity.vo.QueryAmounVo">
+        UPDATE tb_amountrecord set isdelete=1 where eid=#{eid}
+    </update>
+    <!--通过uid查询退单记录-->
+    <select id="queryAmount" parameterType="com.fh.entity.vo.QueryAmounVo" resultType="com.fh.entity.bo.ChargeBackBo">
+        select eid,amount as finalAmount,real_num as balance,equity,declaration_price as returnAmount,poundage,management,declaration_date as currentTime,Status from tb_amountrecord where eid=#{eid} and isdelete=0 and type=6 ;
+    </select>
+
+<!--通过Uid查询有效退单记录是否存在-->
+    <select id="queryAmountById" parameterType="com.fh.entity.vo.TokenVo" resultType="com.fh.entity.bo.ChargeBackBo">
+        select eid,amount as finalAmount,real_num as balance,equity from tb_amountrecord where uid=#{userid} and type=6 and status=4 and isdelete=0
+    </select>
+
+    <!--通过token查询member-->
+    <select id="queryMember" parameterType="com.fh.entity.vo.QueryMemberVo" resultType="com.fh.entity.bo.UserInfoBO">
+        select * from member where member_id=(select member_id from mb_user_token where token=#{token})
+    </select>
+
+    <!--获取总业绩-->
+    <select id="getAchievement" parameterType="com.fh.entity.vo.QueryMemberVo" resultType="com.fh.entity.bo.UserInfoBO">
+        SELECT m.member_name,m.member_truename,b.intbalance,b.achievement FROM member as m left join tb_userbalance b on m.member_id=b.userid WHERE m.member_id=#{member_id}
+    </select>
+    <!--获取vip-->
+    <select id="queryAllVip" parameterType="com.fh.entity.vo.QueryMemberVo" resultType="com.fh.entity.bo.VIPSBo">
+        SELECT code_item_id,code_item_name FROM sys_code_item WHERE code_set_id=7
+    </select>
+    <!--新的获取下级成员列表-->
+    <select id="getChildMember" parameterType="com.fh.entity.vo.QueryMemberVo" resultType="com.fh.entity.bo.ChildMemberBo">
+        SELECT m.member_name AS username,m.member_truename AS  name,b.intbalance as balance,b.level FROM member as m left join tb_userbalance b on m.member_id=b.userid WHERE m.inviter_id=#{userName}
+        <if test="pageSize!=0 and pageIndex!=0">
+            limit #{pageIndex},#{pageSize}
+        </if>
+    </select>
+    <!--获取VIP列表-->
+    <select id="getVIPS" resultType="com.fh.entity.bo.VIPSBo">
+        SELECT code_item_id,code_item_name FROM sys_code_item WHERE code_set_id=7
+    </select>
+    <!--通过userid查VIP-->
+    <select id="queryVIPByToken" parameterType="com.fh.entity.vo.QueryMemberVo" resultType="com.fh.entity.bo.TbuserbalanceBo">
+        SELECT primitive , (level+leveladd) as  level  FROM tb_userbalance WHERE userid=#{member_id}
+    </select>
+    <!--通过memberid查询个人账户信息-->
+    <select id="getBalanceByUid" parameterType="com.fh.entity.vo.QueryMemberVo" resultType="com.fh.entity.bo.TbuserbalanceBo">
+        select intbalance,realreward from tb_userbalance where userid=#{member_id}
+    </select>
+    <!--当前剩余可购买积分包数-->
+    <select id="queryVar" parameterType="com.fh.entity.vo.QueryMemberVo" resultType="com.fh.entity.vo.VariableVo">
+       select * from tb_variable where name= 'allscores'
+    </select>
+
+    <!--通过memberid查询member信息-->
+    <select id="queryMemberById" parameterType="com.fh.entity.vo.QueryMemberVo" resultType="com.fh.entity.bo.UserInfoBO">
+        select intbalance from tb_userbalance where userid=#{member_id}
+    </select>
+
+    <!--新提交积分充值订单记录-->
+    <!--通过token查询member-->
+    <select id="queryAllMember" parameterType="com.fh.entity.vo.TbAmountrecordVo" resultType="com.fh.entity.bo.UserInfoBO">
+        select * from member where member_id=(select member_id from mb_user_token where token=#{token})
+    </select>
+    <!--通过token查询tb_userbalance-->
+    <select id="queryUserBalance" parameterType="com.fh.entity.vo.TbAmountrecordVo" resultType="com.fh.entity.bo.TbuserbalanceBo">
+        select * from tb_userbalance where userid=(select member_id from mb_user_token where token=#{token})
+    </select>
+    <!--修改tb_userbalance中的数据-->
+    <update id="updatePrimitive" parameterType="com.fh.entity.vo.TbAmountrecordVo">
+        UPDATE tb_userbalance SET  primitive = 1 WHERE  userid=(select member_id from mb_user_token where token=#{token})
+    </update>
+    <!--通过uid查询订单-->
+    <select id="queryOrder" parameterType="java.lang.Integer" resultType="com.fh.entity.vo.TbAmountrecordVo">
+        select * from tb_amountrecord where uid=#{uid} and  type=6 and  status=4 and isdelete=0
+    </select>
+    <!--插入数据-->
+    <insert id="addOrder" parameterType="com.fh.entity.vo.TbAmountrecordVo" >
+        insert into tb_amountrecord (uid,status,type,bankName,bankcard,declaration_date,declaration_num,declaration_price,equity,unit,isdelete,date,amount,operatorid,recordTime,banktransaction,margin,real_num,poundage,management,source)
+        VALUES (#{uid},#{status},#{type},#{bankName},#{bankcard},#{declaration_date},#{declarationNum},#{declarationPrice},#{equity},#{unit},#{isdelete},#{date},#{amount},#{operatorid},#{recordTime},#{banktransaction},#{margin},#{real_num},#{poundage},#{management},#{source})
+    </insert>
+    <!--同步数据-->
+    <update id="modifyAllScore" parameterType="com.fh.entity.vo.TbAmountrecordVo" >
+        update tb_variable set value=value-#{box} where name='allscores'
+    </update>
+    <!--同步数据-->
+    <update id="modifyRemainbanlance" parameterType="com.fh.entity.vo.TbAmountrecordVo" >
+       update tb_userbalance set remainbalance = remainbalance- #{box} where userid=#{uid};
+    </update>
+
+
+
+
+    <!--查询步值(spiner数据)-->
+    <select id="queryStepInfo" resultType="com.fh.entity.vo.UpgradePackage">
+        select * from tb_stepinfo order by step_id asc
+    </select>
+<!--通过uid查询用户积分订单-->
+    <select id="queryAmountByUid" parameterType="com.fh.entity.vo.TokenVo" resultType="com.fh.entity.bo.AmountRecordBo">
+        select * from tb_amountrecord where uid=#{userid} and declaration_num=33000 and isdelete=0 order by declaration_date DESC limit 1
+    </select>
+
+    <!--通过用户e_id查询订单详情-->
+    <select id="queryOrderDetailByEid" parameterType="com.fh.entity.vo.TbAmountrecordVo" resultType="com.fh.entity.bo.TbAmountrecordBO">
+        select
+        eid,
+        type,
+        date,
+        amount,
+        status,
+        bankcard,
+        operatorid,
+        recordTime,
+        banktransaction,
+        bankName,
+        margin,
+        equity,
+        declaration_price as declarationPrice,
+        declaration_num as declarationNum,
+        declaration_date as declarationDate,
+        real_num as realNum,
+        remark,
+        source,
+        unit,
+        uid
+        from tb_amountrecord where eid = #{eid} and isdelete = 0
+    </select>
+
+    <!--删除订单记录-->
+    <update id="updateAmountStatus" parameterType="com.fh.entity.bo.TbAmountrecordBO" >
+        UPDATE tb_amountrecord set isdelete ='1' where eid=#{eid}
+    </update>
+
+    <!--还原可购买数量(tb_variable:value)-->
+    <update id="updateVariable" parameterType="com.fh.entity.vo.DeleteOrderVO">
+        update tb_variable set value = value + #{box} where name='allscores'
+    </update>
+
+    <!--扣除用户积分-->
+    <update id="updateUserBalance" parameterType="com.fh.entity.vo.DeleteOrderVO">
+        update tb_userbalance set remainbalance=remainbalance + #{box} where userid = #{uid}
+    </update>
+
+    <!--分页查询待付款记录信息-->
+    <select id="getWaitPayRecordInfoByPage" parameterType="com.fh.entity.vo.QueryPageVo" resultType="com.fh.entity.bo.QuerywaitRecordBo">
+        SELECT eid,a.status,declaration_price,declaration_num,amount,real_num,a.type,a.declaration_date,a.recordTime
+        FROM tb_amountrecord  a WHERE uid= #{uid} and status = 1 and isdelete=0 ORDER BY a.declaration_date DESC
+        <if test="pageSize!=0">
+            limit #{startIndex},#{pageSize}
+        </if>
+    </select>
+
+    <!--获取当日最新净值-->
+    <select id="queryNewCurrentEquity" resultType="com.fh.entity.bo.TbEquityBO">
+        select * from tb_equity order by eid desc limit 1;
+    </select>
+
+    <!--通过userid查询当前用户可以购买的数量-->
+    <select id="queryCountByUserId" parameterType="com.fh.entity.vo.TokenVo" resultType="com.fh.entity.bo.TbuserbalanceBo">
+        select * from tb_userbalance where userid=#{userid}
+    </select>
+
+    <!--查询支付界面信息-->
+    <select id="queryVariable" parameterType="java.lang.String" resultType="com.fh.entity.bo.TbVariableBO">
+        select * from tb_variable where name = #{name}
+    </select>
+
+    <!--查询是否首次下单-->
+    <select id="queryAmountRecordById" parameterType="com.fh.entity.vo.TokenVo" resultType="com.fh.entity.bo.AmountRecordBo">
+        select * from tb_amountrecord where isdelete=0 and  uid=#{userid}  order by declaration_date DESC limit 1
+    </select>
+
+    <!--通过userid查询intbalance-->
+    <select id="getIntbalance" parameterType="com.fh.entity.vo.TokenVo" resultType="java.lang.Integer">
+        select intbalance from tb_userbalance where userid=#{userid}
+    </select>
+    <!--查询积分换算包的单位-->
+    <select id="getUnit"  resultType="java.lang.Integer">
+        select value from tb_variable where name='boxtotal'
+    </select>
+    <!--查询是否有购买生效订单-->
+    <select id="queryAccountAmountRecordById" parameterType="com.fh.entity.vo.TokenVo" resultType="com.fh.entity.bo.AmountRecordBo">
+        select * from tb_amountrecord where isdelete=0 and  uid=#{userid} and status=2 order by declaration_date DESC limit 1
+    </select>
+
+
+    <!--复制记录-->
+    <insert id="amountrecord" parameterType="com.fh.entity.bo.UserBalanceInfo">
+        insert into tb_userbalanceback  select * from tb_userbalance where userid=#{member_id}
+    </insert>
+    <!--奖金记录相抵-->
+    <insert id="copyRewared" parameterType="com.fh.entity.bo.UserBalanceInfo">
+    insert into  tb_reward  (reward_id,userid,inviterid,inviterid_leval,reward_amount,reward_time,reward_remark)
+    select reward_id ,userid ,inviterid ,inviterid_leval , -reward_amount  as reward_amount ,now() as reward_time , reward_remark  from tb_reward where reward_id in (select eid from tb_amountrecord where uid =#{member_id} and status=2  and type !=6)
+    </insert>
+     <!--清空业绩-->
+    <update id="clearTopAchievement" parameterType="com.fh.entity.bo.UserBalanceInfo">
+       update  tb_userbalance  set achievement=achievement-(select sum(amount) from tb_amountrecord where uid =#{member_id} and status=2  and type !=6)     where userid in
+       (select member_id from member  where team_sign  in (${member_ids}))
+    </update>
+    <!--重置开始-->
+    <update id="clearUserbalance" parameterType="com.fh.entity.bo.UserBalanceInfo">
+              update tb_userbalance  set accbalance=0 ,intbalance=0 ,remainbalance=100000 ,weekreward=0 ,reward =0 , realreward=0 , achievement=0 , charitable_reward =0 ,leveladd =0 , level =0 ,primitive=0  where userid=#{member_id}
+    </update>
+    <update id="clearVariable" parameterType="com.fh.entity.bo.UserBalanceInfo">
+        update  tb_variable  set  value=value+ (select sum(amount)/3 from tb_amountrecord where status=2 and uid=#{member_id})  where name='allscores'
+    </update>
+    <!--重置结束-->
+
+
+    <select id="getAmountRecordByMemberId" parameterType="com.fh.entity.bo.UserBalanceInfo" resultType="java.lang.Integer">
+        select eid from tb_amountrecord where uid=#{member_id} and isdelete=0 and status=2
+    </select>
+
+    <!--获取用户信息-->
+    <select id="findUserInfo" parameterType="com.fh.entity.vo.QueryMemberVo" resultType="com.fh.entity.bo.UserInfoBO">
+       select * from member where member_id=(select member_id from mb_user_token where token=#{token})
+    </select>
+
+    <!--通过Uid查询有效退单记录是否存在-->
+    <select id="queryAmountByMemberid" parameterType="java.lang.Integer" resultType="com.fh.entity.bo.AmountRecordBo">
+       select eid from tb_amountrecord where uid=#{userid} and isdelete=0
+    </select>
+
+    <!--奖金追回开始-->
+    <select  id="findReward" parameterType="com.fh.entity.bo.UserBalanceInfo" resultType="com.fh.entity.bo.TbReward">
+        select   inviterid ,sum(reward_amount) as reward_amount   from tb_reward where reward_id in (select eid from tb_amountrecord where   status=2  and uid =#{member_id})   group by inviterid
+    </select>
+    <update id="backReward" parameterType="com.fh.entity.bo.TbReward">
+        update tb_userbalance set  reward =reward - ${reward_amount}  where userid=#{inviterid}
+    </update>
+    <!--奖金追回结束-->
+    <update id="recordeid" parameterType="com.fh.entity.bo.UserBalanceInfo">
+         update tb_userbalanceback  set  name = (select GROUP_CONCAT(eid)  as  eid from tb_amountrecord where status=2   and  uid =#{member_id})  where userid={member_id}
+    </update>
+
+
+</mapper>

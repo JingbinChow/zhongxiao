@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="AngleMapper">
+
+	<!--校验token是否存在-->
+	<select id="CheckAngleToken" parameterType="com.fh.entity.vo.TokenVo" resultType="com.fh.entity.bo.TokenBO">
+		select * from mb_user_token where member_id = #{userid} and type = 2 limit 1
+	</select>
+
+	<select id="checkTokenOver" parameterType="com.fh.entity.vo.TokenVo" resultType="com.fh.entity.bo.TokenBO">
+		select * from mb_user_token where token = #{token} and member_type = 2 limit 1
+	</select>
+
+	<!--用户登录校验-->
+	<select id="findMemberByPwd" parameterType="com.fh.entity.angle.AngleMemberLoginVO" resultType="com.fh.entity.angle.AngleMemberLoginBO">
+		select * from tszb_member_login where
+		 member_nickname=#{mobile}
+		and member_password = #{password}
+	</select>
+
+	<!--用户重复注册校验-->
+	<select id="findMemberByMobile" parameterType="com.fh.entity.angle.AngleMemberLoginVO" resultType="com.fh.entity.angle.AngleMemberLoginBO">
+		select * from tszb_member_login where member_mobile = #{mobile}
+	</select>
+
+	<!--注册用户-->
+	<insert id="reg" parameterType="com.fh.entity.angle.AngleMemberLoginVO">
+		insert into tszb_member_login(member_mobile, member_password) value(#{mobile}, #{password})
+	</insert>
+
+	<!--新注册用户保存token信息-->
+	<insert id="saveToken" parameterType="com.fh.entity.bo.TokenBO">
+		insert into mb_user_token (member_id, member_name, token, login_time, client_type, member_type)
+		value (#{member_id}, #{member_name}, #{token}, #{login_time}, #{client_type}, 2)
+	</insert>
+
+	<!--校验用户是否存在token-->
+	<select id="checkTokenExist" parameterType="com.fh.entity.angle.AngleMemberLoginVO" resultType="com.fh.entity.bo.TokenBO">
+		select * from mb_user_token where member_id = #{member_id} and member_type = 2
+	</select>
+
+	<!--登录时更新用户token-->
+	<update id="updateTokenById" parameterType="com.fh.entity.bo.TokenBO">
+		update mb_user_token set token = #{token} , login_time = #{login_time} where member_id = #{member_id} and member_type =2
+	</update>
+
+	<!--热门主播-->
+	<select id="findHotLive" parameterType="com.fh.entity.angle.AnglePageVO" resultType="com.fh.entity.angle.AngleLiveBO">
+		select * from tszb_live r inner join (select  live_id, count(member_id) count from tszb_live_member group by live_id) n on
+		r.live_id = n.live_id inner join tszb_account a on a.account_memberid = r.member_id where live_status = 1 or live_status = 0 order by n.count , a.reward limit #{startIndex}, #{pageSize}
+	</select>
+
+	<!--直播频道数据-->
+	<select id="findChannelList" resultType="com.fh.entity.angle.AngleChannelBO">
+		select * from tszb_live_channel order by channel_hot
+	</select>
+
+	<!--礼物列表-->
+	<select id="findGiftList" parameterType="com.fh.entity.angle.AnglePageVO" resultType="com.fh.entity.angle.AngleGiftBO">
+		select * from tszb_gift order by gift_price
+	</select>
+
+	<!--直播间人数-->
+	<select id="liveRoomNum" parameterType="com.fh.entity.angle.AngleLiveVO" resultType="java.lang.Integer">
+		select count(member_id) from tszb_live_member where live_id = #{liveId}
+	</select>
+
+	<!--直播间观众列表-->
+	<select id="roomMemberList" parameterType="com.fh.entity.angle.AngleLiveVO" resultType="com.fh.entity.angle.AngleMemberBO">
+		select * from tszb_live_member lm inner join tszb_member_login ml on lm.member_id = ml.member_id inner join tszb_member_base mb on lm.member_id = mb.member_id  where live_id = #{liveId}
+	</select>
+	<!--查询直播用户是否验证过-->
+	<select id="queryAuthentication" parameterType="com.fh.entity.angle.AuthenticationBO" resultType="com.fh.entity.angle.AuthenticationBO">
+		select * from tszb_member_info where member_id = #{member_id} and member_idcard=#{member_id}
+	</select>
+
+
+	<!--新注册用户保存token信息-->
+	<insert id="saveAuthentication" parameterType="com.fh.entity.angle.AuthenticationBO">
+		update tszb_member_info set member_truename=#{member_truename},member_idcard=#{member_idcard} where member_id=#{member_id}
+	</insert>
+
+	<insert id="initMemberInfo" parameterType="com.fh.entity.angle.AngleMemberLoginBO">
+		insert into tszb_member_info ( member_id)
+		value (#{member_id})
+	</insert>
+
+	<insert id="initMemberBase" parameterType="com.fh.entity.angle.AngleMemberLoginBO">
+		insert into tszb_member_base  ( member_id,member_angleid)
+		value (#{member_id},(#{member_id}+10000))
+	</insert>
+
+	<select id="tszbLogin" parameterType="com.fh.entity.angle.AngleMemberLoginVO" resultType="com.fh.entity.angle.AngleMemberLoginBO">
+		select * from tszb_member_login where member_mobile=#{mobile} and member_password=#{password}
+			</select>
+
+
+
+
+	<select id="queryDirectseeding" parameterType="com.fh.entity.angle.AngleCommonVO" resultType="com.fh.entity.angle.AngleLiveBO">
+		select  * from tszb_live   where member_id=#{memberid}
+	</select>
+	<insert id="saveDirectseeding" parameterType="com.fh.entity.zxys.ZxysDirectSeedingBo">
+		INSERT into tszb_live  (member_id ,cid,pushurl,rtmppullurl) VALUES (#{memberid},#{cid} ,#{pushUrl},#{rtmpPullUrl})
+	</insert>
+	<select id="queryLiveingList"  resultType="com.fh.entity.angle.AngleLiveBO">
+		select   * from tszb_live  where live_status=1
+	</select>
+	<update id="savePicture" parameterType="com.fh.entity.angle.AngleCommonVO">
+	    update  tszb_live  set  live_status=1 , live_topic=#{live_topic} , picture=#{picture}   where member_id=#{memberid}
+	</update>
+
+	<update id="closeLiving" parameterType="com.fh.entity.angle.AngleCommonVO">
+		update tszb_live  set live_status=0 where member_id=#{memberid}
+	</update>
+
+	<select id="loginLiving"   parameterType="com.fh.entity.angle.AngleCommonVO"   resultType="com.fh.entity.angle.AngleLiveBO">
+		select   * from tszb_member_login   where  member_nickname=#{member_nickname}   and  member_password=#{member_password}
+	</select>
+
+
+
+
+</mapper>
+
+

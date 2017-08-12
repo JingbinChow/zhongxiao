@@ -1,0 +1,437 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="DoctorMapper">
+
+	<!--***********************************************************************中孝医生app端注册*********************************************************************************************-->
+	<!--&lt;!&ndash;通过手机号查询用户信息&ndash;&gt;-->
+	<!--<select id="queryMemberByMobile" parameterType="com.fh.entity.vo.UserInfoVO" resultType="com.fh.entity.bo.UserInfoBO">-->
+		<!--select * from member where member_name = #{mobile} limit 1-->
+	<!--</select>-->
+
+	<!--通过手机号查询用户信息-->
+	<select id="queryMemberByMobile" parameterType="com.fh.entity.vo.UserInfoVO" resultType="com.fh.entity.bo.UserInfoBO">
+		select * from zxys_member where member_name = #{mobile} limit 1
+	</select>
+
+	<!--医生端注册用户-->
+	<!--<insert id="saveBaseDoctor" parameterType="com.fh.entity.vo.UserInfoVO" >-->
+		<!--insert into member (member_name, member_mobile,member_mobile_bind, member_passwd, member_time, type, is_huanxin) VALUES (#{userName}, #{mobile}, 1,#{passWord}, #{member_time}, 0, 1)-->
+	<!--</insert>-->
+
+	<!--医生端注册用户-->
+	<insert id="saveBaseDoctor" parameterType="com.fh.entity.vo.UserInfoVO" >
+		insert into zxys_member (member_name, member_mobile,member_mobile_bind, member_passwd, member_time, is_huanxin) VALUES (#{userName}, #{mobile}, 1,#{passWord}, #{member_time}, 1)
+	</insert>
+
+	<!--校验验证码-->
+	<!--<select id="confirmValidate" parameterType="com.fh.entity.vo.TokenVo" resultType="com.fh.entity.bo.SmsBO">-->
+		<!--select * from  sms_log where log_phone=#{phone}  and log_captcha=#{code} and log_type=1 order  by add_time desc LIMIT 1-->
+	<!--</select>-->
+
+	<!--校验验证码-->
+	<select id="confirmValidate" parameterType="com.fh.entity.vo.TokenVo" resultType="com.fh.entity.bo.SmsBO">
+		select * from  sms_log where log_phone=#{phone}  and log_captcha=#{code} and log_type=1 and type = 1 order  by add_time desc LIMIT 1
+	</select>
+
+	<!--验证码存储-->
+	<!--<insert id="setSms" parameterType="com.fh.entity.bo.SmsBO"  >-->
+		<!--insert into sms_log (log_phone ,log_captcha ,log_ip,log_msg ,add_time,log_type)-->
+		<!--VALUE (#{log_phone},#{log_captcha},'0000',#{log_msg},UNIX_TIMESTAMP() ,#{log_type})-->
+	<!--</insert>-->
+
+	<!--验证码存储-->
+	<insert id="setSms" parameterType="com.fh.entity.bo.SmsBO"  >
+		insert into sms_log (log_phone ,log_captcha ,log_ip,log_msg ,add_time,log_type, type)
+		VALUE (#{log_phone},#{log_captcha},'0000',#{log_msg},UNIX_TIMESTAMP() ,#{log_type} , 1)
+	</insert>
+
+	<!--查询固定值列表-->
+	<select id="queryVariable" parameterType="java.lang.Integer" resultType="com.fh.entity.zxys.ZxysVariableBO">
+		 select * from zxys_variable where type = #{type}
+	</select>
+
+	<!--医生基本信息更新-->
+	<!--<insert id="updateBaseDoctor" parameterType="com.fh.entity.zxys.ZxysDoctorVO">-->
+		<!--update member set member_truename = #{doctorName} , member_sex = #{sex}   where member_id = #{doctorId}-->
+	<!--</insert>-->
+
+	<!--医生基本信息更新-->
+	<insert id="updateBaseDoctor" parameterType="com.fh.entity.zxys.ZxysDoctorVO">
+		update zxys_member set member_truename = #{doctorName} , member_sex = #{sex}   where member_id = #{doctorId}
+	</insert>
+
+	<!--医生认证信息保存-->
+	<insert id="saveAuthentication" parameterType="com.fh.entity.zxys.ZxysDoctorVO">
+		insert into zxys_authentication (doctor_id, doctor_name, hospital_name, hospital_level, office, title, status, area)
+		VALUES (#{doctorId},#{doctorName},#{hospitalName},#{hospitalLevel},#{office},#{title},1,#{area})
+	</insert>
+
+	<!--模糊查询医院信息-->
+	<select id="queryHospitalFuzzy" parameterType="com.fh.entity.zxys.ZxysHospitalVO" resultType="com.fh.entity.zxys.ZxysHospitalBO">
+		select * from zxys_hospital where hospital_name like '%${hospitalName}%' limit 0,15
+	</select>
+
+	<!--通过手机号查询用户信息-->
+	<!--<select id="queryDoctorByUserName" parameterType="com.fh.entity.vo.UserInfoVO" resultType="com.fh.entity.bo.UserInfoBO">-->
+		<!--select * from member where member_name = #{userName} order by FROM_UNIXTIME(member_time) desc limit 1-->
+	<!--</select>-->
+
+	<!--通过手机号查询用户信息-->
+	<select id="queryDoctorByUserName" parameterType="com.fh.entity.vo.UserInfoVO" resultType="com.fh.entity.bo.UserInfoBO">
+		select * from zxys_member where member_name = #{userName} order by FROM_UNIXTIME(member_time) desc limit 1
+	</select>
+
+	<!--token校验-->
+	<!--<select id="checkMemberByToken" parameterType="com.fh.entity.zxys.ZxysServiceVO" resultType="com.fh.entity.bo.UserInfoBO">-->
+		<!--select * from mb_user_token u inner join member m on  m.member_id = u.member_id where u.token=#{token} order by FROM_UNIXTIME(login_time) desc limit 1-->
+	<!--</select>-->
+
+	<!--token校验-->
+	<select id="checkMemberByToken" parameterType="com.fh.entity.zxys.ZxysServiceVO" resultType="com.fh.entity.bo.UserInfoBO">
+		select * from mb_user_token u inner join zxys_member m on  m.member_id = u.member_id where u.token=#{token} and member_type = 1 order by FROM_UNIXTIME(login_time) desc limit 1
+	</select>
+
+	
+	<select id="checkAuthentication" parameterType="com.fh.entity.zxys.ZxysDoctorVO" resultType="com.fh.entity.zxys.ZxysDoctorBO">
+		select * from zxys_authentication where doctor_id = #{doctorId} limit 1
+	</select>
+	
+	<!--开通服务-->
+	<update id="updateService" parameterType="com.fh.entity.zxys.ZxysServiceVO">
+		update zxys_authentication set
+		<if test='serviceType != "" and serviceType != null and serviceType == "图文咨询" and price != null'>
+			picture_text_consult = #{price} , picture_text_status = #{status}
+		</if>
+		<if test='serviceType != "" and serviceType != null and serviceType == "电话咨询" and price != null'>
+			mobile_consult = #{price} , mobile_status = #{status}
+		</if>
+		<if test='serviceType != "" and serviceType != null and serviceType == "视频咨询" and price != null'>
+			video_consult = #{price}, video_status = #{status}
+		</if>
+		<if test='serviceType != "" and serviceType != null and serviceType == "私人医生" and price != null'>
+			private_doctor_consult = #{price}, private_doctor_status = #{status}
+		</if>
+		<if test='serviceType != "" and serviceType != null and serviceType == "预约就诊" and price != null'>
+			appointment_consult = #{price}, appointment_status = #{status}
+		</if>
+		<if test='serviceType != "" and serviceType != null and serviceType == "院后指导" and price != null'>
+			hospital_post_consult = #{price}, hospital_post_status = #{status}
+		</if>
+		where doctor_id = #{doctorId}
+	</update>
+
+	<!--查询所有的二级科室列表-->
+	<select id="queryOfficeByParentId" parameterType="com.fh.entity.zxys.ZxysOfficeVO" resultType="com.fh.entity.zxys.ZxysOfficeBO">
+		select * from zxys_office where office_parentid = #{officeParentid}
+	</select>
+
+	<!--保存用户的token信息，用户后期的关键操作校验-->
+	<!--<insert id="saveTokenInfo" parameterType="com.fh.entity.bo.TokenBO">-->
+		<!--insert into mb_user_token (member_id ,member_name, token, login_time, client_type) VALUES(#{member_id}, #{member_name},#{token},#{login_time},#{client_type})-->
+	<!--</insert>-->
+
+	<!--保存用户的token信息，用户后期的关键操作校验-->
+	<insert id="saveTokenInfo" parameterType="com.fh.entity.bo.TokenBO">
+		insert into mb_user_token (member_id ,member_name, token, login_time, client_type, member_type) VALUES(#{member_id}, #{member_name},#{token},#{login_time},#{client_type},1)
+	</insert>
+
+	<!--手机号和密码查询用户-->
+	<!--<select id="queryMemberByUserNameAndPwd" parameterType="com.fh.entity.vo.UserInfoVO" resultType="com.fh.entity.bo.UserInfoBO">-->
+		<!--select * from member where member_name = #{userName} and member_passwd = #{passWord} order by FROM_UNIXTIME(member_time) desc limit 1-->
+	<!--</select>-->
+
+	<!--手机号和密码查询用户-->
+	<select id="queryMemberByUserNameAndPwd" parameterType="com.fh.entity.vo.UserInfoVO" resultType="com.fh.entity.bo.UserInfoBO">
+		select * from zxys_member where member_name = #{userName} and member_passwd = #{passWord} order by FROM_UNIXTIME(member_time) desc limit 1
+	</select>
+
+	<!--更新用户登录信息-->
+	<!--<update id="updateMemberLoginInfo" parameterType="com.fh.entity.bo.UserInfoBO">-->
+		<!--update  member  set member_login_time =#{member_login_time},member_old_login_time =#{member_old_login_time},member_login_num =#{member_login_num} where member_id= #{member_id}-->
+	<!--</update>-->
+
+	<!--更新用户登录信息-->
+	<update id="updateMemberLoginInfo" parameterType="com.fh.entity.bo.UserInfoBO">
+		update  zxys_member  set member_login_time =#{member_login_time},member_old_login_time =#{member_old_login_time},member_login_num =#{member_login_num} where member_id= #{member_id}
+	</update>
+
+	<!--记录登录信息-->
+	<insert id="saveLoginLog" parameterType="com.fh.entity.bo.LoginLogBo">
+		insert into login_log (member_id, login_time, type, area, ip) value(#{member_id},#{login_time},#{type},#{area},#{ip})
+	</insert>
+
+	<!--通过用户id查询token记录-->
+	<!--<select id="queryTokenByMemberId" parameterType="com.fh.entity.bo.UserInfoBO" resultType="com.fh.entity.bo.TokenBO">-->
+		<!--select * from mb_user_token where member_id = #{member_id} limit 1-->
+	<!--</select>-->
+
+	<!--通过用户id查询token记录-->
+	<select id="queryTokenByMemberId" parameterType="com.fh.entity.bo.UserInfoBO" resultType="com.fh.entity.bo.TokenBO">
+		select * from mb_user_token where member_id = #{member_id} and member_type = 1 limit 1
+	</select>
+
+	<!--更新用户token-->
+	<!--<update id="updateToken" parameterType="com.fh.entity.bo.TokenBO">-->
+		<!--update  mb_user_token  set token =#{token},login_time=#{login_time} where member_id= #{member_id}-->
+	<!--</update>-->
+
+	<!--更新用户token-->
+	<update id="updateToken" parameterType="com.fh.entity.bo.TokenBO">
+		update  mb_user_token  set token =#{token},login_time=#{login_time} where member_id= #{member_id} and member_type = 1
+	</update>
+
+	<!--通过手机号码和验证码查询登录记录-->
+	<select id="findSMSLogByPhoneAndCode" parameterType="com.fh.entity.vo.TokenVo" resultType="com.fh.entity.bo.SmsBO">
+		select * from sms_log where log_phone = #{phone} and log_captcha = #{code} and log_type = 3
+	</select>
+
+	<!--重置登录密码-->
+	<!--<update id="resetMemberPwd" parameterType="com.fh.entity.vo.TokenVo" >-->
+		<!--update member set member_passwd = #{passWord} where member_mobile = #{phone} and member_mobile_bind = 1-->
+	<!--</update>-->
+
+	<!--重置登录密码-->
+	<update id="resetMemberPwd" parameterType="com.fh.entity.vo.TokenVo" >
+		update zxys_member set member_passwd = #{passWord} where member_mobile = #{phone} and member_mobile_bind = 1
+	</update>
+
+	<!--修改密码-->
+	<update id="updatePWD" parameterType="com.fh.entity.bo.UserInfoBO">
+		update zxys_member set member_passwd = #{member_passwd} where member_id = #{member_id}
+	</update>
+
+	<!--查询医生未完成订单记录-->
+	<select id="queryUncompleteRecord" parameterType="com.fh.entity.bo.UserInfoBO" resultType="com.fh.entity.zxys.ZxysFinishRecordList">
+		select id,patient_sex,patient_area,status,patient_name,patient_age,session_id,order_time,out_trade_no,patient_id from zxys_record where status in(3,4) and doctor_id = #{member_id}
+		<if test="pageSize!=0 and pageIndex!=0">
+		limit #{startIndex}, #{pageSize}
+		</if>
+	</select>
+
+	<!--查询医生完成订单记录-->
+	<select id="queryCompletedRecord" parameterType="com.fh.entity.bo.UserInfoBO" resultType="com.fh.entity.zxys.ZxysFinishRecordList">
+		select id,patient_sex,patient_area,status,patient_name,patient_age,session_id,order_time,out_trade_no,patient_id
+		 from zxys_record where status = 5 and doctor_id = #{member_id}
+		  <if test="pageSize!=0 and pageIndex!=0">
+			  limit #{startIndex}, #{pageSize}
+		  </if>
+	</select>
+
+	<!--通过医生id查询医生信息-->
+	<!--<select id="queryDoctorByMemberId" parameterType="com.fh.entity.bo.UserInfoBO" resultType="com.fh.entity.zxys.ZxysDoctorBO">-->
+		<!--select * from member m inner join zxys_authentication a on m.member_id = a.doctor_id where member_id = #{member_id} limit 1-->
+	<!--</select>-->
+
+	<!--通过医生id查询医生信息-->
+	<select id="queryDoctorByMemberId" parameterType="com.fh.entity.bo.UserInfoBO" resultType="com.fh.entity.zxys.ZxysDoctorBO">
+		select * from  zxys_member m inner join zxys_authentication a on m.member_id = a.doctor_id where member_id = #{member_id} limit 1
+	</select>
+
+	<!--查询成就-->
+	<select id="queryAchievementCount" parameterType="com.fh.entity.zxys.ZxysAchievement" resultType="java.lang.Integer">
+		select count(1) from zxys_achievement where doctor_id = #{doctor_id} and achievement = #{achievement}
+	</select>
+
+	<!--更新医生擅长-->
+	<update id="updateAdept" parameterType="com.fh.entity.zxys.ZxysDoctorVO" >
+		update zxys_authentication set adept = #{adept} where doctor_id = #{doctorId}
+	</update>
+
+	<!--获取近期成就-->
+	<select id="queryCurrentAchievement" parameterType="com.fh.entity.zxys.ZxysAchievement" resultType="java.lang.Integer">
+		select count(1) from zxys_achievement where YEARWEEK(DATE_FORMAT(create_time,'%Y-%m-%d'))= YEARWEEK(now())-1 and doctor_id= #{doctor_id} and achievement = #{achievement}
+	</select>
+
+	<!--上传头像（未完成）-->
+	<update id="updateAvatar" parameterType="com.fh.entity.zxys.ZxysDoctorVO">
+		update zxys_member set member_avatar = #{memberAvatar} where member_id = #{doctorId}
+	</update>
+
+	<!--上传胸牌(未完成)-->
+	<update id="updateCredentials" parameterType="com.fh.entity.zxys.ZxysDoctorVO" >
+
+	</update>
+
+	<!--查询认证信息-->
+	<select id="queryAuthenticationByMemberid"  parameterType="com.fh.entity.bo.UserInfoBO" resultType="com.fh.entity.zxys.ZxysDoctorBO" >
+
+		select * from zxys_authentication where doctor_id=#{member_id} and status=2 limit 1
+			</select>
+
+
+
+
+	<!--绑定银行卡-->
+	<!--<insert id="bindingBankCard" parameterType="com.fh.entity.bo.UserInfoBO" >-->
+	<!--INSERT INTO mb_user_bank (member_id,bankcard,bankname,banktype,bankuser,bankmobile)VALUES (#{member_id},#{member_bankcard},#{member_bankname},#{member_cardtype},#{member_truename},#{member_mobile})-->
+	<!--</insert>-->
+
+	<!--绑定银行卡-->
+	<insert id="bindingBankCard" parameterType="com.fh.entity.bo.UserInfoBO" >
+		INSERT INTO mb_user_bank (member_id,bankcard,bankname,banktype,bankuser,bankmobile,type)VALUES (#{member_id},#{member_bankcard},#{member_bankname},#{member_cardtype},#{member_truename},#{member_mobile},1)
+	</insert>
+
+	<!--绑定银行卡-->
+	<!--<update id="unBindingBankCard" parameterType="com.fh.entity.bo.UserInfoBO" >-->
+		<!--update mb_user_bank set isbinding='2' where member_id=#{member_id} and bankcard=#{member_bankcard}-->
+	<!--</update>-->
+
+	<!--解绑银行卡-->
+	<update id="unBindingBankCard" parameterType="com.fh.entity.bo.UserInfoBO" >
+		update mb_user_bank set isbinding='2' where member_id=#{member_id} and bankcard=#{member_bankcard} and type =1
+	</update>
+
+	<!--查询银行卡绑定列表-->
+	<!--<select id="queryBanksByDoctorid"  parameterType="com.fh.entity.bo.UserInfoBO" resultType="com.fh.entity.zxys.BindBankCardBO" >-->
+		<!--select * from mb_user_bank where member_id=#{member_id} and isbinding='1' ORDER by bindtime asc-->
+	<!--</select>-->
+
+	<!--查询银行卡绑定列表-->
+	<select id="queryBanksByDoctorid"  parameterType="com.fh.entity.bo.UserInfoBO" resultType="com.fh.entity.zxys.BindBankCardBO" >
+		select * from mb_user_bank where member_id=#{member_id} and isbinding='1' and type = 1 ORDER by bindtime asc
+	</select>
+
+	<!--医生评价-->
+	<!--<select id="queryCommentContent" parameterType="com.fh.entity.zxys.ZxysRecordVO" resultType="com.fh.entity.zxys.ZxysCommentContentBO">-->
+		<!--select * from zxys_record r inner join member m on m.member_id = r.doctor_id  where r.doctor_id = #{doctorId}-->
+		<!--and r.start_level = #{startLevel} order by r.create_time DESC-->
+		<!--<if test="pageSize != 0">-->
+			<!--limit #{startIndex},#{pageSize}-->
+		<!--</if>-->
+	<!--</select>-->
+
+	<!--医生评价-->
+	<select id="queryCommentContent" parameterType="com.fh.entity.zxys.ZxysRecordVO" resultType="com.fh.entity.zxys.ZxysCommentContentBO">
+		select * from zxys_record r inner join zxys_member m on m.member_id = r.doctor_id  where r.doctor_id = #{doctorId}
+		and r.start_level = #{startLevel} order by r.create_time DESC
+		<if test="pageSize != 0">
+			limit #{startIndex},#{pageSize}
+		</if>
+	</select>
+
+	<!--查询医院-->
+	<select id="queryHospital" resultType="com.fh.entity.zxys.ZxysHospitalBO">
+		select * from zxys_hospital limit 20
+	</select>
+
+	<!--查询公司联系方式-->
+	<select id="queryConnection" resultType="com.fh.entity.bo.ConnectionBO">
+		select * from tb_constant where constant_key='tel' OR constant_key='email'
+	</select>
+
+	<!--修改支付密码-->
+	<!--<update id="modifyMemberpaypwd" parameterType="com.fh.entity.bo.UserInfoBO">-->
+		<!--UPDATE member set member_paypwd=#{member_paypwd} where member_id=#{member_id}-->
+	<!--</update>-->
+
+
+	<!--修改支付密码-->
+	<update id="modifyMemberpaypwd" parameterType="com.fh.entity.bo.UserInfoBO">
+		UPDATE zxys_member set member_paypwd=#{member_paypwd} where member_id=#{member_id}
+	</update>
+
+	<update id="updateRecordStatusByOutTradeNo" parameterType="com.fh.entity.zxys.ZxysRecordVO">
+		update zxys_record set status = #{status} where out_trade_no = #{outTradeNo}
+	</update>
+	<!--批量处理未注册环信用户开始-->
+ <!--先查询出未注册的环信的用户信息-->
+	<select id="queryMemberByIshuanxin" resultType="com.fh.entity.bo.UserInfoBO">
+		select member_id,member_name from member where is_huanxin=0 limit 100000
+	</select>
+<!--更新注册环信状态-->
+	<update id="modifyIshuanxinTrue" >
+		update member set is_huanxin=1
+	</update>
+	<!--修改注册失败用户的环信状态-->
+	<update id="modifyIshuanxinFalse" parameterType="java.lang.Integer">
+		update member set is_huanxin=0 where member_id=#{member_id}
+	</update>
+
+	<!--每周定时计算医生的成就-->
+	<!--热门医生-->
+	<insert id="updateAchievementhot" >
+			insert into zxys_achievement (doctor_id,achievement, create_time) select doctor_id , '热门医生', now() from zxys_authentication where  browsing_num > 70 group by doctor_id
+	</insert>
+	<!--好评医生-->
+	<insert id="updateAchievementpraise" >
+			insert into zxys_achievement (doctor_id,achievement, create_time) select doctor_id , '好评医生', now() from zxys_record where start_level = 25 group by doctor_id
+	</insert>
+	<!--劳模医生-->
+	<insert id="updateAchievementworker" >
+			insert into zxys_achievement (doctor_id,achievement, create_time) select doctor_id , '劳模医生', now() from zxys_authentication where reception_num > 30 group by doctor_id
+	</insert>
+
+
+<!--认证-->
+	<update id="confirmAuthentication" parameterType="com.fh.entity.bo.UserInfoBO">
+		UPDATE zxys_authentication set status=2 where doctor_id=#{member_id}
+	</update>
+	<!--登录-->
+<select id="adminLogin" parameterType="com.fh.entity.bo.UserInfoBO" resultType="com.fh.entity.bo.AdminUserBO">
+	select * from admin_user where username=#{member_name} and password=#{member_passwd}
+</select>
+
+	<!--获取医生列表-->
+	<select id="queryDoctorsInfo" parameterType="com.fh.entity.zxys.AdminDoctorListBo" resultType="com.fh.entity.zxys.AdminDoctorListBo">
+		select a.member_id ,a.member_name,IFNULL(a.member_truename,"") as member_truename,a.member_mobile,IFNULL(b.status,0) as status,IFNULL(b.hospital_name,"") as hospital_name ,IFNULL(b.area,"") as area from zxys_member as a LEFT JOIN zxys_authentication as b on a.member_id=b.doctor_id where 1=1
+	<if test="member_name!=''">
+		and member_name=#{member_name}
+	</if>
+		<if test="status!=''">
+			and status=#{status}
+		</if>
+		ORDER by a.member_id asc
+	</select>
+	<!--删除开始-->
+	<select id="queryDoctorById" parameterType="com.fh.entity.zxys.ZxysDoctorBO" resultType="com.fh.entity.zxys.ZxysDoctorBO">
+		select member_id as doctor_id,member_mobile from zxys_member where member_id=#{doctor_id}
+	</select>
+	<delete id="deleteDoctorSms" parameterType="com.fh.entity.zxys.ZxysDoctorBO">
+		DELETE FROM sms_log where log_phone=#{member_mobile}
+	</delete>
+	<delete id="deleteDoctorAuthentication" parameterType="com.fh.entity.zxys.ZxysDoctorBO">
+		DELETE FROM zxys_authentication where doctor_id=#{member_mobile}
+	</delete>
+	<delete id="deleteDoctorAchievement" parameterType="com.fh.entity.zxys.ZxysDoctorBO">
+		DELETE FROM zxys_achievement where doctor_id=#{doctor_id}
+	</delete>
+	<delete id="deleteDoctorRecord" parameterType="com.fh.entity.zxys.ZxysDoctorBO">
+		DELETE FROM zxys_record where doctor_id=#{doctor_id}
+	</delete>
+	<delete id="deleteDoctorToken" parameterType="com.fh.entity.zxys.ZxysDoctorBO">
+		DELETE FROM mb_user_token where member_id=#{doctor_id}
+	</delete>
+	<delete id="deleteDoctor" parameterType="com.fh.entity.zxys.ZxysDoctorBO">
+		DELETE FROM zxys_member where member_id=#{doctor_id}
+	</delete>
+	<!--删除结束-->
+
+
+
+	<!--意见反馈-->
+	<insert id="feedBack" parameterType="com.fh.entity.vo.FeedBackVo">
+		insert into mb_feedback (content,type,ftime,member_id,member_name,source) values(#{content},#{type},#{ftime},#{member_id},#{member_name},#{source})
+	</insert>
+
+	<!--没有注册环信的医生-->
+
+	<select id="queryDoctorIsNotHuanxin" resultType="com.fh.entity.zxys.ZxysDoctorBO">
+		select * from zxys_authentication where 1 = 1
+
+	</select>
+
+	<!--更新用户环信注册状态码-->
+	<update id="updateDoctorIsHuanxin" parameterType="java.lang.Integer">
+		update zxys_member set is_huanxin = 1 where member_id = #{member_id}
+	</update>
+
+	<!--所有医生的环信注册状态码更新-->
+	<update id="updateIshuanxinTrueForDcotor" >
+		update zxys_member set is_huanxin = 1
+	</update>
+
+</mapper>
+
+

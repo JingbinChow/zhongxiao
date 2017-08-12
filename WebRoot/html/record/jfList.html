@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=8" >
+<title></title>
+<script type="text/javascript" src="../../script/easyui/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../script/easyui/jquery.cookie.js"></script>
+<script type="text/javascript" src="../../script/easyui/jquery.easyui.min.js"></script>
+<script type="text/javascript" src="../../script/easyui/easyui-lang-zh_CN.js"></script>
+<script type="text/javascript" src="../../script/easyui/common.js"></script>
+<link rel="stylesheet" type="text/css" href="../../css/easyuicss/easyui.css" />
+<link rel="stylesheet" type="text/css" href="../../css/easyuicss/icon.css" />
+<link href="../style/style.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="../js/jfList.js"></script>
+	<style type="text/css">
+		.p{
+
+
+			margin:10px 10px 10px 10px
+
+		}
+	</style>
+
+</head>
+<body>
+	<div id="container"  style="height: 650px">
+		<div class="input" style="">
+			<div align="center">
+				<h1>医生列表</h1>
+			</div>
+			<div class="">
+				<table width="95%" border="0" cellspacing="0" cellpadding="0">
+
+					<tr>
+						<td>
+							<table width="99%" border="0" cellspacing="0" cellpadding="0" height="100">
+
+								<tr align="center">
+										<td>用 户 名: <input id="username"  style=""/></td>
+									    <td>认证状态:
+											<select id="status">
+												<option value ="">全部</option>
+												<option value ="0">未认证</option>
+												<option value ="1">待审核</option>
+												<option value ="2">已认证</option>
+											</select>
+										</td>
+									<td >
+										<a href="javascript:void(0);" style="float: right;margin-left: 10px;"><img style="border: 0px;" onclick="chaxun()" src="../../images/button/cx.gif" /></a>
+									</td>
+									<!--<td >-->
+										<!--<a href="javascript:void(0);" style="float: right;margin-left: 10px;"><img style="border: 0px;" onclick="add()" src="../../images/button/zengjia.gif" /></a>-->
+									<!--</td>-->
+								</tr>
+							</table>
+						</td>
+					</tr>
+				</table>
+			</div>
+		</div>
+		<div style="height: 450px;width: 1000px; float: left;">
+			<table id="dg" title="医生列表" class="easyui-datagrid" width="100%"
+				style="border-collapse:collapse; height: 400px"
+				data-options="
+				rownumbers:true,
+				singleSelect:true,
+				fit:true,
+				nowrap:false,
+				striped:true,
+				fitColumns:true,
+				autoRowHeight:true,
+				pagination:true,
+				pageSize:20">
+				<thead>
+					<tr>
+						<th data-options="field:'member_id'" align="center" width="5%"><b>用户ID</b></th>
+						<th data-options="field:'member_name'"  align="center" width="5%"><b>用户名</b></th>
+						<!--<th data-options="field:'amount'"  align="center" width="5%"><b>交易金额</b></th>-->
+						<th data-options="field:'member_truename'"  align="center" width="5%"><b>医生姓名</b></th>
+						<th data-options="field:'member_mobile'"  align="center" width="5%"><b>手机号码</b></th>
+
+						<th data-options="field:'hospital_name'"  align="center" width="5%"><b>医院名称</b></th>
+
+						<th data-options="field:'area'"  align="center" width="5%"><b>地区</b></th>
+
+
+						<th data-options="field:'renzhengcaozuo'" align="center" width="5%"><b>认证操作</b></th>
+						<th data-options="field:'shanchucaozuo'" align="center" width="5%"><b>删除操作</b></th>
+					</tr>
+				</thead>
+			</table>
+		</div>
+	</div>
+</body>
+</html>

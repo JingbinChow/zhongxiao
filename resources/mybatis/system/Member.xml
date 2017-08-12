@@ -1,0 +1,488 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="Member">
+	
+	<!-- ================================================================================================== -->
+
+
+	<!-- 判断用户名和密码 -->
+	<select id="appLogin" parameterType="pd" resultType="pd">
+		select * from 33hao_member
+		where 1=1
+		AND  	member_name = #{member_name} and member_passwd = #{member_passwd}
+	</select>
+
+
+	<!--<insert id="setToken" parameterType="pd">-->
+		<!--insert into 33hao_mb_user_token (-->
+		<!--member_id,-->
+		<!--member_name,-->
+		<!--token,-->
+		<!--login_time,-->
+		<!--client_type-->
+
+		<!--) values (-->
+		<!--#{member_id},-->
+		<!--#{member_name},-->
+		<!--#{token},-->
+		<!--UNIX_TIMESTAMP() ,-->
+		<!--#{client_type}-->
+		<!--)-->
+	<!--</insert>-->
+
+	<!-- 判断用户名和密码 -->
+	<select id="userLogin" parameterType="com.fh.entity.vo.UserInfoVO" resultType="com.fh.entity.bo.MemberBO">
+		select * from member
+		where 1=1
+		AND  	member_name = #{userName} and member_passwd = #{passWord}
+	</select>
+    <!--生成token-->
+	<insert id="setToken" parameterType="com.fh.entity.bo.TokenBO">
+		insert into mb_user_token (
+		member_id,
+		member_name,
+		token,
+		login_time,
+		client_type
+
+		) values (
+		#{member_id},
+		#{member_name},
+		#{token},
+		UNIX_TIMESTAMP() ,
+		#{client_type}
+		)
+	</insert>
+	<!-- 删除token -->
+	<delete id="delToken" parameterType="com.fh.entity.bo.TokenBO">
+		delete from mb_user_token
+		where
+		member_id = #{member_id}
+	</delete>
+
+    <!--验证token 是否过期-->
+	<select id="userCheckTokenIsLost" parameterType="user" resultType="com.fh.entity.bo.TokenBO">
+		select * from mb_user_token
+		where 1=1
+		AND  	token = #{token}
+	</select>
+
+
+	<select id="checkBankCard" parameterType="user" resultType="com.fh.entity.bo.UserInfoBO">
+		select * from  member where 1=1 and member_bankcard =#{bankcard}
+    </select>
+
+	<select id="checkUserName" parameterType="user" resultType="com.fh.entity.bo.UserInfoBO">
+		select * from  member where 1=1 and member_name =#{userName}
+	</select>
+    <!--修改密码-->
+	<update id="userModifyPassWord" parameterType="user">
+          update  member  set member_passwd =#{newpassWord} where member_name= #{userName}
+	</update>
+
+	<!--查询个人账户详情-->
+	<select id="queryUserBalanceInfo" parameterType="com.fh.entity.vo.TokenVo" resultType="com.fh.entity.bo.UserBalanceInfo">
+		select m.member_name,m.available_predeposit ,b.intbalance,m.available_rc_balance,m.member_bankcard as bankCard,m.member_bankname as bankName from member as m left join tb_userbalance as b on m.member_id= b.userid where m.member_id=#{userid} limit 1
+	</select>
+
+	<!--通过token查userid-->
+	<select id ="queryUseridByToken" parameterType="com.fh.entity.vo.TokenVo" resultType="com.fh.entity.vo.TokenVo">
+		SELECT member_id as userid, member_name as name ,token from  mb_user_token where token=#{token}
+	</select>
+
+	<!--通过token查member_truename-->
+	<select id ="queryTrueNameByToken" parameterType="com.fh.entity.vo.TokenVo" resultType="com.fh.entity.vo.TokenVo">
+		select u.member_truename as trueName,u.member_id as userid ,u.member_bankcard as bankCard,u.member_bankname as bankname ,u.member_cardtype as cardType from member u INNER JOIN mb_user_token t on u.member_id = t.member_id where token = #{token}
+	</select>
+
+	<!--查询通过userid慈善基金-->
+	<select id="queryCharitableByToken" parameterType="com.fh.entity.vo.TokenVo" resultType="java.lang.String">
+		SELECT TRUNCATE(SUM(charitable)  ,2) FROM ransfer_record WHERE member_id=#{userid}
+	</select>
+	<!--通过userid查VIP-->
+	<select id="queryVIPByToken" parameterType="com.fh.entity.vo.TokenVo" resultType="com.fh.entity.bo.TbuserbalanceBo">
+		SELECT primitive , (level+leveladd) as  level  FROM tb_userbalance WHERE userid=#{userid} limit 1
+	</select>
+	<!--获取VIP列表-->
+	<select id="getVIPS" resultType="com.fh.entity.bo.VIPSBo">
+		SELECT code_item_id,code_item_name FROM sys_code_item WHERE code_set_id=7
+	</select>
+	<insert id="feedBack" parameterType="com.fh.entity.vo.FeedBackVo">
+insert into mb_feedback (content,type,ftime,member_id,member_name,source) values(#{content},#{type},#{ftime},#{member_id},#{member_name},#{source})
+	</insert>
+	<!--查询用户通过用户id-->
+
+	<!--注册账户-->
+	<insert id="registerMember" parameterType="com.fh.entity.bo.UserInfoBO">
+		insert into member (
+		member_name,
+		member_passwd,
+		member_mobile,
+		member_time,
+		member_login_time,
+		member_old_login_time,
+		is_huanxin
+		) values (
+		#{member_name},
+		#{member_passwd},
+		#{member_mobile},
+		UNIX_TIMESTAMP(),
+		UNIX_TIMESTAMP(),
+		UNIX_TIMESTAMP(),
+		1
+		)
+	</insert>
+	<!--<insert id="appRegisterMember" parameterType="com.fh.entity.bo.UserInfoBO">-->
+<!--INSERT into member (member_name,member_passwd,member_mobile) VALUES (#{member_name},#{member_passwd},#{member_mobile})-->
+
+	<!--</insert>-->
+	<insert id="addMemberForApp" parameterType="java.lang.String">
+		INSERT into member (member_name) VALUES (#{member_name})
+	</insert>
+	<!--同步生成个人账户数据-->
+	<insert id="addUserBalance" parameterType="com.fh.entity.vo.UserBalanceVo">
+		insert into tb_userbalance (userid,accbalance,intbalance,remainbalance) VALUES (#{userid},#{accbalance},#{intbalance},#{remainbalance})
+	</insert>
+<!--查询用户信息-->
+	<select id="queryMemberInfo" parameterType="com.fh.entity.vo.TokenVo" resultType="com.fh.entity.bo.UserInfoBO">
+		select member_id,member_idcard,member_truename,team_sign,member_bankcard,member_bankname, member_cardtype,inviter_id,member_name from member where member_id=#{userid}
+	</select>
+
+
+	<select id="QueryMember" parameterType="com.fh.entity.vo.TokenVo" resultType="com.fh.entity.bo.UserInfoBO">
+		select m.member_id,m.member_name,m.member_mobile,m.member_truename from member as m left join mb_user_token as t on m.member_id=t.member_id where token=#{token}
+	</select>
+	<select id="queryMaxTeamSign"  resultType="com.fh.entity.bo.UserInfoBO">
+		select max(team_sign)  from member  where  LENGTH(team_sign)='4' order by  team_sign
+	</select>
+
+	<!-- 获取银行列表 -->
+	<resultMap id="BanknameList" type="com.fh.entity.system.MemberBankList">
+		<result column="bank_id" property="bankId"/>
+		<result column="bank_key" property="bankKey"/>
+		<result column="bank_name" property="bankName"/>
+	</resultMap>
+	<select id="getUserBanknameList" resultMap="BanknameList">
+		SELECT  * FROM tb_bankinfo
+	</select>
+	<!--用户定位-->
+	<insert id="addLocation" parameterType="com.fh.entity.vo.LocationVo">
+		INSERT into login_log (member_id,login_time,type,area,ip,latitude,longitude) VALUES (#{member_id},#{login_time},#{type},#{area},#{ip},#{latitude},#{longitude})
+	</insert>
+	<select id="queryLocationById" parameterType="com.fh.entity.vo.LocationVo" resultType="com.fh.entity.vo.LocationVo" >
+		select * from  login_log where member_id=#{member_id} limit 1
+	</select>
+	<update id="updateLocation" parameterType="com.fh.entity.vo.LocationVo">
+		update login_log set login_time=#{login_time},type=#{type},area=#{area},ip=#{ip},latitude=#{latitude},longitude=#{longitude} where member_id=#{member_id}
+	</update>
+	<!--================================================================================================== -->
+
+	<!--11.03 liu-->
+	<!-- 用户登录时，保存IP,GPS,type,area,login_time,member_id-->
+	<insert id="saveLoginLog" parameterType="com.fh.entity.bo.LoginLogBo">
+		insert into login_log (member_id,login_time,type,area,gps,ip) VALUES (#{member_id},#{login_time},#{type},#{area},#{gps},#{ip})
+	</insert>
+
+	<!-- 登录时跟新登录时间与上次登录时间 -->
+	<update id="updateLoginTime" parameterType="com.fh.entity.bo.UserInfoBO">
+		update  member  set member_login_time =#{member_login_time},member_old_login_time =#{member_old_login_time},member_login_num =#{member_login_num} where member_id= #{member_id}
+	</update>
+
+	<!-- 登录时验证该用户是否具有token值-->
+	<select id="findTokenById" parameterType="com.fh.entity.bo.UserInfoBO" resultType="com.fh.entity.bo.TokenBO">
+		SELECT * FROM mb_user_token WHERE member_id=#{member_id} ORDER BY FROM_UNIXTIME(login_time) LIMIT 1
+	</select>
+
+	<!-- 根据id修改token值-->
+	<update id="updateTokenById" parameterType="com.fh.entity.bo.TokenBO" >
+		update  mb_user_token  set token =#{token},login_time=#{login_time} where member_id= #{member_id}
+	</update>
+
+
+
+
+	<!--=====================================注册=============================================-->
+
+	<!--用户注册-->
+	<insert id="userRegister" parameterType="com.fh.entity.bo.UserInfoBO">
+		insert into member (
+		member_name,
+		member_passwd,
+		member_mobile,
+		member_email,
+		member_truename,
+		inviter_id,
+		member_address,
+		member_sex,
+		member_idcard,
+		member_bankname,
+		member_bankcard,
+		member_area,
+		team_sign,
+		member_cardtype,
+		member_time
+		) values (
+		#{member_name},
+		#{member_passwd},
+		#{member_mobile},
+		#{member_email},
+		#{member_truename},
+		#{inviter_id},
+		#{member_address},
+		#{member_sex},
+		#{member_idcard},
+		#{member_bankname},
+		#{member_bankcard},
+		#{member_area},
+		#{team_sign},
+		#{member_cardtype},
+		#{member_time}
+		)
+	</insert>
+
+
+	<!--个人账户数据初始化-->
+	<insert id="saveUserBalance" parameterType="com.fh.entity.bo.TbuserbalanceBo">
+		insert into tb_userbalance (userid,reward,intbalance,accbalance,remainbalance,name) VALUES (#{userid},#{reward},#{intbalance},#{accbalance},#{remainbalance},#{name})
+	</insert>
+
+	<!--查询银行卡是否注册-->
+	<select id="checkBankCardForAdd" parameterType="com.fh.entity.vo.UserInfoVO" resultType="com.fh.entity.bo.UserInfoBO">
+		select * from  member where 1=1 and member_bankcard =#{bankcard}
+	</select>
+	<!--查询用户名是否重复-->
+	<select id="checkUserNameForAdd" parameterType="com.fh.entity.vo.UserInfoVO" resultType="com.fh.entity.bo.UserInfoBO">
+		select * from  member where 1=1 and member_name =#{userName}
+	</select>
+
+	<!--查询用户(真实姓名)是否重复-->
+	<select id="checkTrueNameForAdd" parameterType="com.fh.entity.vo.UserInfoVO" resultType="com.fh.entity.bo.UserInfoBO">
+		select * from  member where 1=1 and member_name =#{name}
+	</select>
+
+	<!--通过用户名查询信息-->
+	<select id="findByName" parameterType="com.fh.entity.bo.UserInfoBO" resultType="com.fh.entity.bo.UserInfoBO">
+		SELECT  * from member where member_name = #{member_name}
+	</select>
+	<!--=======================================================================================-->
+
+
+
+	<!--====================根据token查询===========================-->
+	<!--     查询用户基本信息                   -->
+	<!--根据token查询用户基本信息-->
+	<select id="queryByToken" parameterType="com.fh.entity.bo.TokenBO" resultType="com.fh.entity.bo.UserInfoBO">
+		select * from member where member_id = (select  member_id  FROM mb_user_token where token =#{token})
+	</select>
+
+
+	<!--查询交易记录-->
+	<select id="findAmountrecordById" parameterType="com.fh.entity.bo.UserInfoBO" resultType="com.fh.entity.bo.TbAmountrecordBO">
+		select * from tb_amountrecord where uid=#{member_id} and isdelete=0 limit 1
+	</select>
+
+	<!--查询下级成员-->
+	<select id="queryByInviterId" parameterType="com.fh.entity.bo.UserInfoBO" resultType="com.fh.entity.bo.MemberInfoBo">
+		SELECT member_truename AS memberTruename FROM member WHERE inviter_id  =#{member_name}
+	</select>
+
+	<!--=======================================================================================-->
+
+
+
+
+
+
+
+
+
+
+	<!--==============================================修改个人基本信息================================================-->
+	<!--修改信息查询银行卡-->
+	<select id="findBankCardForUpdate" parameterType="com.fh.entity.vo.UpdateUserInfoVo" resultType="com.fh.entity.bo.UserInfoBO">
+		select * from  member where 1=1 and member_bankcard =#{bankcard}
+	</select>
+
+	<!--修改基本信息-->
+	<update id="updateUserInfo" parameterType="com.fh.entity.bo.UserInfoBO">
+		update member
+		<set>
+			<if test="inviter_id!=null and inviter_id!=''">
+				inviter_id= #{inviter_id},
+			</if>
+
+			<if test="member_truename!=null and member_truename!=''">
+				member_truename= #{member_truename},
+			</if>
+
+			<if test="member_sex!=null and member_sex!=''">
+				member_sex= #{member_sex},
+			</if>
+
+			<if test="member_idcard!=null and member_idcard!=''">
+				member_idcard= #{member_idcard},
+			</if>
+
+			<if test="member_bankname!=null and member_bankname!=''">
+				member_bankname= #{member_bankname},
+			</if>
+
+			<if test="member_mobile!=null and member_mobile!=''">
+				member_mobile= #{member_mobile},
+			</if>
+
+			<if test="member_area!=null and member_area!=''">
+				member_area= #{member_area},
+			</if>
+
+			<if test="member_address!=null and member_address!=''">
+				member_address= #{member_address},
+			</if>
+
+			<if test="member_email!=null and member_email!=''">
+				member_email= #{member_email},
+			</if>
+
+			<if test="member_cardtype!=null and member_cardtype!=''">
+				member_cardtype= #{member_cardtype},
+			</if>
+
+			<if test="member_bankcard!=null and member_bankcard!=''">
+				member_bankcard= #{member_bankcard}
+			</if>
+		</set>
+		WHERE member_id =#{member_id}
+	</update>
+
+	<!--==============================================================================================-->
+
+
+<!--根据memberid查询payInfo-->
+	<select id="checkPayInfo" parameterType="com.fh.entity.vo.TokenVo" resultType="com.fh.entity.bo.PayInfoBo">
+		select member_id,member_truename,member_paypwd,member_idcard,member_bankcard,member_bankname,member_cardtype from  member where  member_id=#{userid}
+	</select>
+
+	<!--保存姓名，身份证号-->
+	<update id="updateMemberInfo" parameterType="com.fh.entity.bo.UserInfoBO">
+		UPDATE member
+		<set>
+			<if test="member_truename!=null and member_truename !=''">
+				member_truename = #{member_truename},
+			</if>
+			<if test="member_idcard!=null and member_idcard!=''">
+				member_idcard = #{member_idcard}
+			</if>
+		</set>
+		WHERE member_id =#{member_id}
+	</update>
+
+	<!--保存支付密码-->
+	<update id="setPayPassword" parameterType="com.fh.entity.bo.UserInfoBO">
+		update member
+		<set>
+			<if test="member_paypwd!=null and member_paypwd!='' ">
+				member_paypwd =#{member_paypwd}
+			</if>
+		</set>
+		where member_id=#{member_id}
+	</update>
+
+
+	<!--保存用户银行卡相关信息-->
+	<update id="saveBankCardInfo" parameterType="com.fh.entity.bo.UserInfoBO" >
+		update member
+		<set>
+			<if test="member_bankname != null and member_bankname != ''">
+				member_bankname = #{member_bankname},
+			</if>
+			<if test="member_bankcard != null and member_bankcard != ''">
+				member_bankcard = #{member_bankcard},
+			</if>
+			<if test="member_cardtype != null and member_cardtype != ''">
+				member_cardtype = #{member_cardtype},
+			</if>
+		</set>
+
+		where member_id = #{member_id}
+	</update>
+
+	<!--推荐人为空时，查询顶级团队标示-->
+	<select id="getTopTeamSign" resultType="java.lang.String">
+		select max(team_sign)  from member  where  LENGTH(team_sign)='4' order by  team_sign
+	</select>
+
+	<!--通过inviterid查询团队标示-->
+	<select id="getTeamSignByInviterid" parameterType="com.fh.entity.vo.UserInfoVO" resultType="com.fh.entity.bo.UserInfoBO">
+		select max(team_sign) as team_sign from member where inviter_id = #{inviter}
+	</select>
+
+	<!--通过member_name查询团队标示-->
+	<select id="getTeamSignByMemberName" parameterType="com.fh.entity.vo.UserInfoVO" resultType="com.fh.entity.bo.UserInfoBO">
+		select max(team_sign) as team_sign from member where member_name = #{inviter}
+	</select>
+
+	<!--更新用户信息（团队标示，推荐人）-->
+	<update id="updateTeamSign" parameterType="com.fh.entity.vo.UserInfoVO">
+		update member set inviter_id = #{inviter},team_sign = #{team_sign} where member_name = #{userName}
+	</update>
+
+	<!--********************************校验是否可以修改个人信息************************************-->
+<!--auth:李荣洲 通过member_name查询下级成员列表-->
+	<select id="queryChildMembers" parameterType="com.fh.entity.vo.TokenVo" resultType="com.fh.entity.bo.UserInfoBO">
+		SELECT member_name,member_truename FROM member WHERE inviter_id=#{name}
+	</select>
+	<!--auth:李荣洲 通过member_id查询是否存在有效的订单-->
+	<select id="queryAmountsByUid" parameterType="com.fh.entity.vo.TokenVo" resultType="com.fh.entity.bo.UserInfoBO">
+		SELECT uid as member_id  FROM tb_amountrecord WHERE uid=#{userid} and isdelete=0
+	</select>
+
+
+
+	<!--修改密码 验证token-->
+	<select id="checkUserinfo" parameterType="com.fh.entity.vo.TokenVo" resultType="com.fh.entity.vo.TokenVo">
+		select member_name as name from mb_user_token where token =#{token}
+	</select>
+	<update id="modifyMobile" parameterType="com.fh.entity.bo.UserInfoBO">
+		update  member  set member_mobile=#{member_mobile} where member_id= #{member_id}
+	</update>
+
+
+	<!--添加健康状况-->
+	<!--<insert id="addBodyCondition" parameterType="com.fh.entity.vo.HealthConditionVo">
+		insert into health_condition (member_id,height,weight,is_marriednormal)
+		VALUES (#{member_id},#{height},#{weight},#{is_married})
+	</insert>-->
+	<!--<insert id="addHealtCondition" parameterType="com.fh.entity.vo.HealthConditionVo">
+		insert into health_condition (smoking_status,smoke_ages,smoke_number,drink_status,drink_is_regular,is_sleep_normal,is_crap_normal,is_take_painkillers)
+		VALUES (#{smoking_status},#{smoke_ages},#{smoke_number},#{drink_status},#{drink_is_regular}#{is_sleep_normal},#{is_crap_normal},#{is_take_painkillers})
+	</insert>-->
+	<!--查询健康状况-->
+	<select id="queryHealthCondition" parameterType="com.fh.entity.vo.HealthConditionVo" resultType="com.fh.entity.vo.HealthConditionVo">
+		select *  from health_condition where member_id=#{member_id}
+	</select>
+	<!--初始化身体状况-->
+	<insert id="initHealthCondition" parameterType="java.lang.Integer">
+		insert into health_condition  (member_id) VALUES
+		(
+		#{member_id}
+		)
+	</insert>
+	<!--修改身体状况
+	<update id="modifyBodyCondition" parameterType="com.fh.entity.vo.HealthConditionVo">
+		  update  health_condition  set height=#{height},weight=#{weight},is_married=#{is_married} where member_id=#{member_id}
+	</update>-->
+	<!--修改健康状况-->
+	<update id="modifyHealthCondition" parameterType="com.fh.entity.vo.HealthConditionVo">
+		update  health_condition  set height=#{height},weight=#{weight},is_married=#{is_married},smoking_status=#{smoking_status},smoke_ages=#{smoke_ages},smoke_number=#{smoke_number},drink_status=#{drink_status},diet_is_regular=#{diet_is_regular},is_sleep_normal=#{is_sleep_normal},is_crap_normal=#{is_crap_normal},is_take_painkillers=#{is_take_painkillers},modify_state='1' where member_id=#{member_id}
+	</update>
+	<!--按member_id查询是否有下单记录-->
+	<select id="queryAmountsByMemberId" parameterType="com.fh.entity.bo.UserInfoBO" resultType="com.fh.entity.bo.AmountListBO">
+		select *  from tb_amountrecord where uid=#{member_id}
+	</select>
+	<!--按Member_Name查询是否有下级成员-->
+	<select id="queryChildMembersByMemberName" parameterType="com.fh.entity.bo.UserInfoBO" resultType="com.fh.entity.bo.UserInfoBO">
+		select *  from member where inviter_id=#{member_name} limit 1
+	</select>
+
+</mapper>

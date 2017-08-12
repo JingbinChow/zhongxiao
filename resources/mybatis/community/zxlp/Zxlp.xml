@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="Zxlp">
+    <!--中孝良品-->
+    <select id="queryIntegration" parameterType="com.fh.entity.zxlp.ZxlpCommonVo"  resultType="com.fh.entity.zxlp.ZxlpCommonVo">
+        select member.member_id ,zxzq_information.integration,member.member_uuid from member
+            left join  zxzq_information  on  member.member_id=zxzq_information.memberid  where  integration is not null  and member_uuid=#{member_uuid}
+    </select>
+
+    <!--下单-->
+    <insert id="zxlpOrder"  parameterType="com.fh.entity.zxlp.ZxlpCommonVo">
+        insert into  zxlp_order   (member_uuid ,status,integration,order_id,order_time,order_dec,outer_trn_id,remain_integration) VALUES
+        (#{member_uuid} ,1 ,#{integration} ,#{order_id},#{order_time},#{order_dec} ,#{outer_trn_id},#{remain_integration})
+    </insert>
+
+    <!--下单扣取积分-->
+    <update id="zxlpIntegrationBack"  parameterType="com.fh.entity.zxlp.ZxlpCommonVo">
+        update zxzq_information set integration = #{remain_integration}  where memberid=#{member_id}
+    </update>
+
+
+    <!--查询订单是否存在-->
+    <select id="queryOrder" parameterType="com.fh.entity.zxlp.ZxlpCommonVo" resultType="com.fh.entity.zxlp.ZxlpCommonVo">
+        select * from zxlp_order where order_id=#{order_id}
+    </select>
+
+    <!--更改订单状态-->
+    <update id="orderBack" parameterType="com.fh.entity.zxlp.ZxlpCommonVo" >
+        update zxlp_order  set  status=2  where order_id=#{order_id}
+    </update>
+
+    <!--退单时还原积分-->
+    <update id="zxlpIntegrationAdd"  parameterType="com.fh.entity.zxlp.ZxlpCommonVo">
+        update zxzq_information set integration = #{integration}  where memberid=#{member_id}
+    </update>
+</mapper>

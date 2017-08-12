@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="Integral">
+	<!--获取当日净值-->
+	<select id="integralueryEquity"   resultType="com.fh.entity.bo.TbEquityBO" >
+		select * from tb_equity  where createdate =(select max(createdate) FROM tb_equity)
+	</select>
+
+	<!--获取7日净值-->
+	<resultMap type="com.fh.entity.bo.TbEquityBO" id="7day">
+		<id column="eid" property="eid"/>
+		<result column="equity" property="equity"/>
+		<result column="createdate" property="createdate"/>
+		<result column="operatorid" property="operatorid"/>
+	</resultMap>
+	<select id="integralQueryEquitys"   resultMap="7day">
+		select * from tb_equity  order by createdate  desc  LIMIT 0 ,6
+	</select>
+
+</mapper>

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="AdminMapper">
+	
+	<!-- ======================================app客户端============================================================ -->
+    <!--登录查询-->
+	<select id ="login" parameterType="com.fh.entity.bo.AdminUserBO" resultType="com.fh.entity.bo.AdminUserBO">
+		select * from admin_user where username = #{userName} and password = #{passWord}
+	</select>
+
+	<!--分页查询用户列表-->
+	<select id="queryMembers" parameterType="com.fh.entity.vo.QueryMemberVo" resultType="com.fh.entity.bo.MemberListBo">
+		select member_id as userId, member_name as userName, member_truename as name, member_bankcard as bankCard from member where 1=1
+		<if test="userName !=null and userName!='' ">
+			and member_name=#{userName}
+		</if>
+		<if test="bankCard !=null and bankCard!='' ">
+			and member_bankcard=#{bankCard}
+		</if>
+		<if test="pageSize !=0">
+			limit #{pageIndex},#{pageSize}
+		</if>
+	</select>
+	<!--通过memberid查询积分订单列表-->
+	<select id="queryAmounts" parameterType="com.fh.entity.bo.MemberListBo" resultType="com.fh.entity.bo.AmountListBO">
+		select eid,status from tb_amountrecord where status=2 and uid=#{userId}
+	</select>
+	<!---->
+	<select id ="findMemberByMemberId" parameterType="com.fh.entity.bo.MemberListBo" resultType="com.fh.entity.bo.UserInfoBO">
+		select team_sign from  member where inviter_id=(select member_name from member  where member_id=#{userId})
+	</select>
+	<!--删除个人账户信息-->
+	<delete id="deleteBalance" parameterType="com.fh.entity.bo.MemberListBo">
+		delete from tb_userbalance where userid=#{userId}
+	</delete>
+	<!--删除个人积分订单-->
+	<delete id="deleteAmount" parameterType="com.fh.entity.bo.MemberListBo">
+		delete from tb_amountrecord where uid=#{userId}
+	</delete>
+	<!--删除个人用户信息-->
+	<delete id="deleteMember" parameterType="com.fh.entity.bo.MemberListBo">
+		delete from member where member_id=#{userId}
+	</delete>
+
+
+</mapper>
+
+

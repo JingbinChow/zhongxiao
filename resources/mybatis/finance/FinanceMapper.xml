@@ -1,0 +1,483 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="FinanceMapper">
+
+    <!-- ======================================app客户端============================================================ -->
+    <!--登录查询-->
+    <select id="login" parameterType="com.fh.entity.bo.AdminUserBO" resultType="com.fh.entity.bo.AdminUserBO">
+		select * from admin_user where username = #{userName} and password = #{passWord}
+	</select>
+
+    <!--订单列表获取-->
+    <resultMap type="com.fh.entity.bo.AmountListBO" id="AmountList">
+        <result column="member_name" property="username"/>
+        <result column="declaration_date" property="declaration_date"/>
+        <result column="declaration_num" property="declaration_num"/>
+        <result column="declaration_price" property="declaration_price"/>
+        <result column="amount" property="amount"/>
+        <result column="eid" property="eid"/>
+        <result column="status" property="status"/>
+        <result column="type" property="type"/>
+        <result column="uid" property="uid"/>
+        <result column="member_truename" property="name"/>
+        <result column="recordTime" property="recordtime"/>
+        <result column="member_bankname" property="bankName"/>
+        <result column="member_bankcard" property="bankCard"/>
+    </resultMap>
+
+
+    <select id="getFinanceRecord" parameterType="com.fh.entity.vo.AmountListVO" resultType="com.fh.entity.bo.AmountListBO">
+        SELECT
+        u.member_name as username,
+        a.declaration_num as declaration_num,
+        a.declaration_price as declaration_price,
+        a.amount as amount,
+        a.declaration_date as declaration_date,
+        a.eid as eid,
+        a.status as status,
+        a.type as type,
+        a.uid as uid,
+        a.recordTime as recordtime,
+        u.member_truename as name,
+        u.member_bankcard AS bankcard,
+        u.member_bankname AS bankname
+        FROM tb_amountrecord a INNER JOIN  member u ON a.uid=u.member_id LEFT JOIN tb_scorerecord s ON a.eid=s.eid
+        WHERE isdelete=0
+        <if test="name!=null and name!=''">
+            and u.member_name=#{name} or u.member_truename=#{name}
+        </if>
+        <if test="bankCard!=null and bankCard!=''">
+            and u.member_bankcard=#{bankCard}
+        </if>
+        <if test="status==0">
+            AND a.status in (1,2) order by declaration_date DESC  limit #{start},#{pageSize}
+        </if>
+        <if test="status==1">
+            AND a.status=#{status} order by recordtime DESC  limit #{start},#{pageSize}
+        </if>
+        <if test="status==0">
+            AND a.status=#{status} order by status asc,declaration_date DESC  limit #{start},#{pageSize}
+        </if>
+    </select>
+    <!--订单确认-->
+    <select id="setFinanceRecord" parameterType="com.fh.entity.vo.ConfirAmountListVO"
+            resultType="com.fh.entity.bo.TbAmountrecordBO">
+		select * from tb_amountrecord where eid = #{eid}
+	</select>
+    <!--查询用户信息-->
+    <select id="findUserInfoBO" parameterType="com.fh.entity.vo.ConfirAmountListVO"
+            resultType="com.fh.entity.bo.UserInfoBO">
+		select * from  member   where 1=1  AND member_name = #{userName}
+	</select>
+
+    <select id="findUserInfoString" parameterType="String" resultType="com.fh.entity.bo.UserInfoBO">
+		select * from  member   where 1=1  AND member_id = #{str}
+	</select>
+    <!--财务确认订单-->
+    <update id="confirm" parameterType="com.fh.entity.bo.TbAmountrecordBO">
+        UPDATE tb_amountrecord set
+        date = #{date} ,
+        amount= #{amount},
+        status= #{status},
+        operatorid= #{operatorid},
+        recordTime= #{recordTime},
+        banktransaction= #{banktransaction},
+        margin= #{margin},
+        real_num =#{realNum},
+        <if test="remark!=null and remark != '' ">
+            remark =#{remark},
+        </if>
+        source =#{source}
+        where eid=#{eid}
+    </update>
+    <!--通过Eid查询-->
+    <select id="findQuityByEid" parameterType="com.fh.entity.vo.ConfirAmountListVO" resultType="java.lang.Float">
+		select equity from  tb_amountrecord   where 1=1  AND eid=#{eid}
+			</select>
+    <!--确认积分订单-->
+    <update id="AmountSave" parameterType="com.fh.entity.vo.AmountSaveVo">
+		UPDATE  tb_amountrecord  set
+		date = #{date} ,
+		amount= #{amount},
+		status= #{status},
+		operatorid= #{operatorid},
+		recordTime= #{recordTime},
+		banktransaction= #{banktransaction},
+		margin= #{margin},
+		real_num =#{realNum},
+
+		source =#{source}
+		where eid=#{eid}
+	</update>
+    <!--同步个人账户积分数-->
+    <update id="updateBalance" parameterType="com.fh.entity.vo.AmountSaveVo">
+		UPDATE  tb_userbalance set intbalance=intbalance+#{realnum} where userid=(select member_id from member where member_name=#{userName})
+	</update>
+
+    <!--奖金-->
+    <select id="findLeval" parameterType="com.fh.entity.vo.RewardVO" resultType="com.fh.entity.vo.RewardVO">
+		select LENGTH(team_sign)/4 as leavl  , team_sign   from member  where member_name=(select inviter_id from  member  where member_id= #{memberId})
+	</select>
+
+    <!--根据团队标识符查询人员id-->
+
+    <select id="findMemberId" parameterType="String" resultType="com.fh.entity.bo.UserInfoBO">
+        select * from member
+        where team_sign in
+        <foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </select>
+
+
+    <!--<update id="setReward">-->
+    <!--UPDATE  tb_userbalance set intbalance=intbalance+#{realnum} where userid=(select member_id from member where member_name=#{userName})-->
+    <!--</update>-->
+
+    <!--查询奖金-->
+    <select id="findReward" resultType="com.fh.entity.bo.TbuserbalanceBo">
+		select sum(reward)  as   reward from tb_userbalance
+	</select>
+
+
+    <select id="findbalance" resultType="com.fh.entity.bo.TbuserbalanceBo">
+		select userid ,reward from  tb_userbalance
+    </select>
+
+    <!--奖金结算-->
+    <update id="setbalance">
+		update  tb_userbalance  set realreward=realreward+reward * 0.79  , charitable_reward=charitable_reward+reward * 0.01   where reward>0
+	</update>
+
+    <!--中小积分000-->
+    <insert id="jiangjinchiTojifen">
+	update member  set  available_rc_balance =available_rc_balance+ (select reward *0.10 from tb_userbalance  where    tb_userbalance.userid= member.member_id)  where team_sign is not null
+	</insert>
+    <select id="findRewards" resultType="com.fh.entity.bo.RewardResultBo">
+		SELECT TRUNCATE((reward * 0.10),2) AS newreward, userid AS member_id FROM tb_userbalance where reward>0
+	</select>
+    <update id="updateForReward" parameterType="com.fh.entity.bo.RewardResultBo">
+	update member set  available_rc_balance = available_rc_balance+#{newreward} where member_id=#{member_id} and team_sign is not null
+</update>
+    <!--奖金清零-->
+    <update id="setRewardZero">
+		update  tb_userbalance  set reward=0
+	</update>
+    <!--奖金结算记录-->
+    <insert id="setRwardRocrd">
+		insert into ransfer_record
+(dateandtime ,status ,member_id ,member_name ,transfer_points ,actual_number ,poundage,manage,charitable ,consumption ,remark)
+select now(),'1' ,a.userid ,b.member_name , truncate(a.reward ,2),  truncate(a.reward *0.79 ,2), truncate(a.reward *0.05 ,2), truncate(a.reward *0.05 ,2), truncate(a.reward *0.01 ,2), truncate(a.reward *0.10 ,2 ) ,'奖金结算'
+from tb_userbalance a LEFT JOIN member b on a.userid=b.member_id where reward>0
+	</insert>
+
+	<!--结算奖金生成消费积分记录记录-->
+	<insert id ="rcbLog" >
+		insert into rcb_log
+		(member_id ,member_name , type ,        add_time  , available_amount ,        freeze_amount,description)
+		select a.userid ,b.member_name ,'reward',   UNIX_TIMESTAMP(), truncate(a.reward *0.10 ,2 ),  0, '奖金结算'
+		from tb_userbalance a LEFT JOIN member b on a.userid=b.member_id where reward>0
+	</insert>
+
+
+    <!--奖金记录-->
+    <insert id="jiangjinrecord">
+		insert into ransfer_record(member_id ,status ,roll_out,roll_inot ,transfer_points ,   actual_number,   dateandtime ,remark)
+         (select      userid  ,  '6' ,   '5' ,     '1',        reward * 0.8 ,  reward * 0.8  ,  now() ,'奖金结算'     from tb_userbalance a  where  a.weekreward>0)
+	</insert>
+
+    <!--积分记录-->
+    <insert id="xiaofeijifendrecord">
+		insert into ransfer_record(member_id ,status ,roll_out,roll_inot ,transfer_points ,   actual_number,   dateandtime ,remark)
+         (select      userid  ,  '6' ,   '5' ,     '4',        reward * 0.2 ,  reward * 0.2  ,  now() ,'奖金结算'     from tb_userbalance a  where  a.weekreward>0)
+	</insert>
+
+
+    <!--积分流水-->
+    <insert id="xiaofeijifendrecordliushui">
+		insert into rcb_log(member_id , member_name , type ,add_time , available_amount , freeze_amount ,  description )
+	    select a.userid , b.member_name  , 'reward' ,  UNIX_TIMESTAMP() ,  a.reward*0.2 , '0' , '奖金结算 '  from tb_userbalance a
+	    left join  member b  on a.userid =b.member_id  where a.weekreward >0
+	</insert>
+
+    <!--奖金流水-->
+    <insert id="jiangjinrecordliushui">
+		insert into tb_rewardRecord ( remark  ,time ,type ,reward)
+             select a.userid , UNIX_TIMESTAMP()  , '6'  ,  a.reward*0.8 from tb_userbalance a
+	</insert>
+
+
+    <update id="setZore">
+		update tb_userbalance  set reward=0
+	</update>
+
+    <select id="findRecord" resultType="com.fh.entity.bo.RansferRecordBO">
+		select a.ransferid ,a.status ,a.member_id ,b.member_name , b.member_truename, a.roll_out ,a.roll_out ,a.roll_inot ,a.transfer_points , a.actual_number ,a.poundage , a.dateandtime ,a.remark  from  ransfer_record a
+					left join  member b  on a.member_id=b.member_id  where  status='4'
+	</select>
+
+
+    <insert id="setjifen" parameterType="com.fh.entity.bo.RansferRecordBO">
+		insert into rcb_log(member_id ,  member_name ,     type ,     add_time ,       available_amount  ,  description )
+		 values
+		  (#{member_id}, #{member_name}  , 'reward', UNIX_TIMESTAMP() ,#{actual_number},   '奖金转账' )
+	</insert>
+
+    <update id="setjifenMember" parameterType="com.fh.entity.bo.RansferRecordBO">
+		update member set  available_rc_balance =available_rc_balance + #{actual_number}   where  member_id= #{member_id}
+	</update>
+
+    <!--<insert id="setqianbao" parameterType="com.fh.entity.bo.RansferRecordBO">
+        insert into pd_recharge  (pdr_member_id , pdr_member_name , pdr_amount ,pdr_payment_time , pdr_payment_state     , pdr_add_time)
+       values
+       (#{member_id} ,#{member_name} ,#{actual_number},UNIX_TIMESTAMP() ,'1' , UNIX_TIMESTAMP())
+
+    </insert>-->
+    <insert id="setqianbao" parameterType="com.fh.entity.bo.RansferRecordBO">
+		insert into pd_recharge  set   pdr_sn =1, pdr_member_id=#{member_id},pdr_member_name=#{member_name},pdr_amount=#{actual_number},pdr_payment_time=UNIX_TIMESTAMP() ,pdr_payment_state='1',pdr_add_time=UNIX_TIMESTAMP()
+	</insert>
+
+    <update id="setqianbaoMember" parameterType="com.fh.entity.bo.RansferRecordBO">
+		update member set  available_predeposit =available_predeposit + #{actual_number}   where  member_id= #{member_id}
+	</update>
+
+    <update id="setstatus" parameterType="com.fh.entity.bo.RansferRecordBO">
+		update ransfer_record set  status='6'  where  ransferid= #{ransferid}
+	</update>
+
+    <!--财务端获取退单申请列表-->
+    <select id="queryChargeBackList" parameterType="com.fh.entity.vo.QueryChargeBackListVo"
+            resultType="com.fh.entity.bo.QueryChargeBackListBo">
+        SELECT
+        a.eid,a.type,a.declaration_date,a.status,a.declaration_price,a.amount,a.poundage,a.management,a.declaration_num,m.member_name,member_truename,m.member_id,IFNULL(downReward,0) AS downReward,IFNULL(upReward,0) AS upReward
+        FROM tb_amountrecord AS a LEFT JOIN member AS m ON a.uid=m.member_id LEFT JOIN  (SELECT inviterid , SUM(reward_amount) AS downReward FROM tb_reward  GROUP BY inviterid ) b  ON  a.uid =b.inviterid
+        LEFT JOIN  (SELECT userid , SUM(reward_amount)AS upReward FROM tb_reward  GROUP BY userid ) c  ON  a.uid =c.userid WHERE 1=1 AND a.isdelete=0 AND TYPE=6
+
+
+        <if test="status!=0">
+            and status=#{status}
+        </if>
+        <if test="name!=null and name!='' ">
+            and m.member_truename=#{name}
+        </if>
+        <if test="userName!=null and userName!=''">
+            and member_name=#{userName}
+        </if>
+
+        order by status ASC ,declaration_date DESC
+        <if test="pageSize !=0">
+            limit #{pageIndex},#{pageSize}
+        </if>
+    </select>
+    <!--确认退单-->
+    <update id="accountChargeBackByEid" parameterType="com.fh.entity.bo.QueryChargeBackListBo">
+		update tb_amountrecord set status=5,recordTime=#{recordTime} where eid=#{eid} and isdelete=0
+	</update>
+    <update id="modifyAmountStatus" parameterType="com.fh.entity.bo.QueryChargeBackListBo">
+        update tb_amountrecord set status=3 where uid=#{member_id}
+    </update>
+    <!--清零个人账户积分-->
+    <update id="updateBalanceInfo" parameterType="com.fh.entity.bo.QueryChargeBackListBo">
+		update tb_userbalance set intbalance=intbalance-#{declaration_num} where userid=#{member_id}
+	</update>
+<!--修改退单用户所有的有效积分订单状态-->
+    <update id="updateAmount" parameterType="com.fh.entity.bo.QueryChargeBackListBo">
+        update tb_userbalance set intbalance=intbalance-#{declaration_num} where userid=#{member_id}
+    </update>
+    <select id="queryCashList" parameterType="com.fh.entity.vo.QueryCashListVo"
+            resultType="com.fh.entity.bo.QueryCashListBo">
+
+        SELECT
+        pdc_id,pdc_member_id,pdc_member_name,pdc_amount,pdc_bank_name,pdc_bank_no,pdc_bank_user,pdc_add_time,pdc_payment_state,pdc_payment_admin
+        FROM pd_cash WHERE 1=1
+
+
+        <if test="name!=null and name!='' ">
+            and pdc_bank_user=#{name}
+        </if>
+        <if test="bankCard!=null and bankCard!='' ">
+            and pdc_bank_no=#{bankCard}
+        </if>
+        <if test="status!=null and status!='' ">
+            and pdc_payment_state=#{status}
+        </if>
+
+        order by pdc_add_time
+        <if test="pageSize !=0">
+            limit #{pageIndex},#{pageSize}
+        </if>
+    </select>
+    <!--确认退单-->
+    <update id="accountCashByPid" parameterType="com.fh.entity.bo.QueryCashListBo">
+        update pd_cash set pdc_payment_state=#{pdc_payment_state},pdc_payment_time=#{pdc_payment_time},pdc_payment_admin=#{pdc_payment_admin},pdc_remark=#{pdc_remark} where pdc_id=#{pdc_id}
+    </update>
+
+    <!--清零个人账户积分-->
+    <update id="updateFreeze_predeposit" parameterType="com.fh.entity.bo.QueryCashListBo">
+        update member set freeze_predeposit=freeze_predeposit-#{pdc_amount} where member_id=#{pdc_member_id}
+    </update>
+    <insert id="reduceFreezeCashLog" parameterType="com.fh.entity.vo.CashLogVo">
+        insert into pd_log (lg_member_id,lg_member_name,lg_admin_name,lg_type,lg_av_amount,lg_freeze_amount,lg_add_time,lg_desc) values(#{lg_member_id},#{lg_member_name},#{lg_admin_name},#{lg_type},#{lg_av_amount},#{lg_freeze_amount},#{lg_add_time},#{lg_desc})
+    </insert>
+
+
+    <!--查询下单时长-->
+    <select id="findAmountrecordTime" resultType="com.fh.entity.bo.ViewDeleteAmountrecordBO">
+       select * from view_delete_amountrecord where time>36
+--   select * from view_delete_amountrecord where eid=114
+    </select>
+
+    <!--tb_userbanlace 退包-->
+    <update id="backTbUserbalance" parameterType="com.fh.entity.bo.ViewDeleteAmountrecordBO" >
+        update tb_userbalance set  remainbalance=remainbalance+ #{pack} where userid=#{uid}
+    </update>
+    <!--tb_tb_variable 退包-->
+    <update id="backTbVariable" parameterType="com.fh.entity.bo.ViewDeleteAmountrecordBO"  >
+         update tb_variable set  value=value+ #{pack}  where  name='allscores'
+    </update>
+    <!--tb_amountrecord 删单-->
+    <update id="backtbAmountrecord" parameterType="com.fh.entity.bo.ViewDeleteAmountrecordBO" >
+        update tb_amountrecord  set  isdelete=1  where  eid=#{eid}
+    </update>
+
+
+    <!--获取付款状态总人数-->
+    <select id="countComfirm" resultType="com.fh.entity.bo.CountBO">
+        SELECT (SELECT COUNT(*) FROM tb_amountrecord WHERE STATUS =1 ) AS uncomfirm, (SELECT COUNT(*) FROM tb_amountrecord WHERE STATUS =2) AS comfirm FROM member LIMIT 1
+    </select>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <!--============================================确认到账===============================================-->
+    <!--根据 ConfirAmountVO userName查询信息-->
+    <select id="findUserInfoByUserName" parameterType="com.fh.entity.vo.ConfirAmountVO" resultType="com.fh.entity.bo.UserInfoBO">
+        select * from member where member_name=#{userName}
+    </select>
+
+    <!--判断是否存在上级-->
+    <select id="queryUserByUserName" parameterType="com.fh.entity.bo.UserInfoBO" resultType="com.fh.entity.bo.UserInfoBO">
+        select * from member where member_name =#{inviter_id}
+    </select>
+
+    <!--根据uid 和status判断上级是否激活-->
+    <select id="checkActivation" parameterType="com.fh.entity.bo.UserInfoBO" resultType="com.fh.entity.bo.TbAmountrecordBO">
+        select * from tb_amountrecord where uid = #{member_id} and status=2
+    </select>
+
+    <select id="queryTbAmountrecordByEid" parameterType="com.fh.entity.vo.ConfirAmountVO" resultType="com.fh.entity.bo.TbAmountrecordBO">
+        select * from tb_amountrecord where eid = #{eid}
+    </select>
+
+    <!--更新账户信息-->
+    <insert id="addAmountResult" parameterType="com.fh.entity.bo.TbAmountrecordBO">
+        insert into tb_amountrecord (
+        uid,
+        status,
+        amount,
+        real_num,
+        declaration_price,
+        declaration_num,
+        operatorid,
+        bankcard,
+        banktransaction,
+        date,
+        bankName,
+        recordTime,
+        equity,
+        margin,
+        source)
+        values(#{uid},
+        #{status},
+        #{amount},
+        #{realNum},
+        #{declarationPrice},
+        #{declarationNum},
+        #{operatorid},
+        #{bankcard},
+        #{banktransaction},
+        #{date},
+        #{bankName},
+        #{recordTime},
+        #{equity},
+        #{margin},
+        #{source}
+        )
+    </insert>
+
+    <!--更新balance数据-->
+    <update id="modifyRemainbanlance" parameterType="com.fh.entity.vo.DeleteOrderVO">
+        update tb_userbalance set remainbalance=remainbalance-#{box} where userid=#{uid}
+    </update>
+
+    <!--更新tb_variable中的value数据-->
+    <update id="modifyAllScore" parameterType="com.fh.entity.vo.DeleteOrderVO">
+        update tb_variable set value=value-#{box} where name='allscores'
+    </update>
+
+    <!--确认进账后同步修改Balance表的积分数-->
+    <update id="modifyIntbalace" parameterType="com.fh.entity.bo.AmountRecordBo">
+        update tb_userbalance set intbalance=intbalance+#{integral} where userid=#{uid}
+    </update>
+
+    <!--添加tb_scorerecord表中数据-->
+    <insert id="addScordRecord" parameterType="com.fh.entity.bo.TbScorerecordBO">
+        INSERT INTO tb_scorerecord (equity,status,successnum,createdate,userid) VALUES (#{equity},#{status},#{successnum},#{createdate},#{userid})
+    </insert>
+
+
+
+    <!--查询上级人数-->
+    <select id="queryInviterLeavl" parameterType="com.fh.entity.bo.CountRewardBO" resultType="com.fh.entity.bo.GetLeavlBO">
+        select LENGTH(team_sign) as leavl  , team_sign AS teamsign  from member  where member_name=(select inviter_id from  member  where member_id=#{userid})
+    </select>
+
+    <!--查询全部上级id-->
+    <select id="queryAllInviterName" parameterType="com.fh.entity.bo.GetLeavlNameBO" resultType="com.fh.entity.bo.GetLeavlNameBO">
+        select GROUP_CONCAT(member_id) as name   from member where team_sign in (${persion}) order by team_sign desc
+    </select>
+
+    <!--查询全部上级人员信息-->
+    <select id="queryByStr" parameterType="java.lang.String" resultType="com.fh.entity.bo.ViewRewardBO">
+        select * from view_reward  where member_id  in (${_parameter})    order by  team_sign desc
+    </select>
+
+    <!--计算奖金-->
+    <insert id="countReward" parameterType="com.fh.entity.bo.CountRewardBO">
+        insert into tb_reward (reward_id ,userid ,inviterid,inviterid_leval,reward_amount ,reward_time ,reward_remark) values (#{eid},#{userid},#{inviter},#{inviterid_leval},#{money},#{reward_time},#{reward_remark})
+    </insert>
+
+    <!--修改balance reward-->
+    <update id="countRewardUpdateBalance" parameterType="com.fh.entity.bo.TbuserbalanceBo" >
+        update tb_userbalance  set reward=reward+#{money}  where  userid=#{userid}
+    </update>
+
+    <!--新增业绩计算-->
+    <update id="countNewReward" parameterType="com.fh.entity.bo.TbuserbalanceBo">
+        update  tb_userbalance  set  achievement= achievement +#{money}  where   userid  in (${userIdzu})
+    </update>
+
+    <!--确认等级查询-->
+    <select id="checkLeavl" parameterType="com.fh.entity.bo.ViewMemberAmountBO" resultType="com.fh.entity.bo.ViewMemberAmountBO">
+        select * from  view_member_amount  where uid=#{uid}
+    </select>
+
+    <!--确定会员等级-->
+    <update id="confirmLevel" parameterType="com.fh.entity.bo.TbuserbalanceBo">
+        update  tb_userbalance set level =#{level} where userid=#{userid}
+    </update>
+
+
+</mapper>

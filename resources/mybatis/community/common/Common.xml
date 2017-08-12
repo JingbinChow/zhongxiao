@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="Common">
+        <insert id="setSms" parameterType="com.fh.entity.bo.SmsBO"  >
+                insert into sms_log (log_phone ,log_captcha ,log_ip,log_msg ,add_time,log_type)
+                VALUE (#{log_phone},#{log_captcha},'0000',#{log_msg},UNIX_TIMESTAMP() ,1)
+        </insert>
+        <insert id="setSmsForLogin" parameterType="com.fh.entity.bo.SmsBO"  >
+                insert into sms_log (log_phone ,log_captcha ,log_ip,log_msg ,add_time,log_type,member_id,member_name)
+                VALUE (#{log_phone},#{log_captcha},'0000',#{log_msg},UNIX_TIMESTAMP() ,3,#{member_id},#{member_name})
+        </insert>
+        <select id="confirmValidate" parameterType="com.fh.entity.vo.TokenVo" resultType="com.fh.entity.bo.SmsBO">
+                select * from  sms_log where log_phone=#{phone}  and log_captcha=#{code} and log_type=1 order  by add_time desc LIMIT 1
+        </select>
+        <select id="confirmForPassword" parameterType="com.fh.entity.vo.TokenVo" resultType="com.fh.entity.bo.SmsBO">
+                select * from  sms_log where log_phone=#{phone}  and log_captcha=#{code} and log_type=3 order  by add_time desc LIMIT 1
+        </select>
+        <select id="confirmMember" parameterType="com.fh.entity.vo.TokenVo" resultType="com.fh.entity.bo.UserInfoBO">
+                SELECT member_id,member_mobile,member_name FROM  member where member_name=#{name}
+        </select>
+
+        <!--修改密码-->
+        <update id="modifyPassWord" parameterType="com.fh.entity.bo.UserInfoBO" >
+                UPDATE member set member_passwd=#{member_passwd} where member_id=#{member_id}
+        </update>
+
+        <!--修改密码验证用户-->
+        <select id="checkUserForModifyPassWord" parameterType="com.fh.entity.bo.UserInfoBO" resultType="com.fh.entity.bo.UserInfoBO">
+                select * from member where member_name=#{member_name} and member_passwd=#{member_passwd}
+        </select>
+
+
+        <select id="findAmountrecord" resultType="com.fh.entity.bo.TbAmountrecordBO">
+               select * from tb_amountrecord where status='2'  and  uid !=237 order by recordTime
+        </select>
+
+
+        <update id="updateReward"  parameterType="com.fh.entity.bo.TbAmountrecordBO">
+
+              update tb_reward set  reward_id =#{eid}  where userid=#{uid}
+        </update>
+
+        <!--确认注册客户端-->
+        <update id="setType"  parameterType="com.fh.entity.bo.SmsBO">
+
+                update  sms_log  set  registrationtype=#{registrationtype}  where log_id =#{log_id}
+        </update>
+
+        <!--验证token是否失效-->
+        <select id="QueryMember" parameterType="com.fh.entity.vo.QueryPageVo" resultType="com.fh.entity.bo.UserInfoBO">
+                select m.member_id,m.member_name,m.member_mobile,m.member_truename from member as m left join mb_user_token as t on m.member_id=t.member_id where token=#{token}
+        </select>
+
+        <select id="queryMessageMall" parameterType="com.fh.entity.vo.QueryPageVo" resultType="com.fh.entity.bo.QueryMessageMallBo">
+                select * from message_mall
+                <if test="pageSize!=0">
+                        limit #{pageIndex},#{pageSize}
+                </if>
+        </select>
+<!--分页查询咨询信息-->
+        <select id="queryMessageInfo" parameterType="com.fh.entity.vo.QueryPageVo" resultType="com.fh.entity.bo.MessageInfoBo">
+                select * from message_info order by orderfor  ASC
+                <if test="pageSize!=0">
+                        limit #{pageIndex},#{pageSize}
+                </if>
+        </select>
+        <!--通过member表中的一些特定字段查询咨询信息-->
+        <select id="queryMemberInfo" parameterType="com.fh.entity.vo.CommonMemberVo" resultType="com.fh.entity.bo.UserInfoBO">
+                select member_id,member_name,member_truename,member_passwd,member_email,member_mobile,member_time,inviter_id,team_sign,member_bankcard,member_bankname,member_address,member_cardtype,member_paypwd from member where 1=1
+                <if test="member_id!=0">
+                        and member_id=#{member_id}
+                </if>
+                <if test="member_name!=null and member_name!=''">
+                        and member_name=#{member_name}
+                </if>
+                <if test="member_truename!='' and member_truename!=null">
+                        and member_truename=#{member_truename}
+                </if>
+                <if test="team_sign!='' and team_sign!=null">
+                        and team_sign=#{team_sign}
+                </if>
+        </select>
+
+
+
+        <!-- 校验token  -->
+        <select id="checkToken" parameterType="com.fh.entity.bo.TokenBO" resultType="com.fh.entity.bo.TokenBO">
+                select * from mb_user_token
+                <where>
+                        <if test="token != null and token !=''">
+                                AND token=#{token}
+                        </if>
+                        <if test="member_id!=null">
+                               AND member_id=#{member_id}
+                        </if>
+                        <if test="member_name!=null and member_name!=''">
+                                AND member_name=#{member_name}
+                        </if>
+                </where>
+                ORDER BY login_time DESC LIMIT 1
+        </select>
+
+<!-- 李荣洲 查询主页货物信息-->
+        <select id="queryIndexInfo" parameterType="java.lang.String" resultType="com.fh.entity.bo.IndexInfoBo">
+                select * from index_info where type=#{type}
+        </select>
+
+        <!--版本号-->
+        <select id="queryVersion" parameterType="com.fh.entity.vo.TokenVo" resultType="java.lang.String">
+                select constant_value as version from tb_constant where constant_key =#{type}
+        </select>
+
+        <!--url-->
+        <select id="queryUrl" parameterType="com.fh.entity.vo.TokenVo" resultType="java.lang.String" >
+                select constant_value as url from tb_constant where constant_key =#{url}
+        </select>
+
+        <!--根据memberid-->
+
+        <select id="queryMemberPaypwdByMemberId" parameterType="com.fh.entity.bo.UserInfoBO" resultType="com.fh.entity.bo.UserInfoBO">
+                select * from member where member_id=#{member_id}
+        </select>
+        <select id="queryMemberListByCashTime" parameterType="com.fh.entity.vo.AdminQueryMemberVo" resultType="com.fh.entity.vo.MemberListVO">
+               select  m.member_id as member_id, m.member_name as member_name,m.member_truename as member_truename,  m.member_mobile as member_mobile ,cash.cash_add_time as addTime,cash.cash_amount as money from member as m LEFT JOIN zxzq_cash as cash on m.member_id=cash.cash_member_id
+        where 1=1
+                <if test="addTimeStart != null and addTimeStart !=''">
+                        and cash.cash_add_time > #{addTimeStart}
+                </if>
+                <if test="addTimeEnd != null and addTimeEnd !=''">
+                        and   cash.cash_add_time &lt; #{addTimeEnd}
+                </if>
+                <if test="member_name != null and member_name !=''">
+                        and (m.member_name like #{member_name} or m.member_truename like #{member_name})
+                </if>
+                GROUP BY m.member_mobile
+                ORDER BY cash.cash_add_time asc
+        </select>
+
+</mapper>

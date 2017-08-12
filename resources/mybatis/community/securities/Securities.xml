@@ -1,0 +1,1337 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="Securities">
+    <!--下单记录-->
+    <insert id="saveRecord"  parameterType="com.fh.entity.zxzq.ZxzqRecordBO">
+        insert into  zxzq_record  (memberid ,securitiesid,securities,securitiesnum,price,realprice,levered,otime)
+        VALUES (#{memberid},#{securitiesid} ,#{securities} ,#{securitiesnum} ,#{price},#{realprice} ,#{levered} , now())
+    </insert>
+    <insert id="newSaveRecord"  parameterType="com.fh.entity.zxzq.ZxzqRecordBO">
+        insert into  zxzq_record  (memberid ,securitiesid,securities,securitiesnum,price,realprice,levered,otime,remark)
+        VALUES (#{memberid},#{securitiesid} ,#{securities} ,#{securitiesnum} ,#{price},#{realprice} ,#{levered} , now(),'流通币购买')
+    </insert>
+    <select id="queryHolding" parameterType="com.fh.entity.zxzq.ZxzqCommonBO" resultType="com.fh.entity.zxzq.ZxzqHoldingBO">
+        select *  FROM  zxzq_holding where memberid=#{memberid}
+    </select>
+    <!--持有证券-->
+    <insert id="saveHolding"  parameterType="com.fh.entity.zxzq.ZxzqRecordBO">
+        insert into  zxzq_holding  (memberid,securitiesid,securitiesnum)
+        VALUES (#{memberid},#{securitiesid} ,#{securitiesnum})
+    </insert>
+    <update id="updateHolding" parameterType="com.fh.entity.zxzq.ZxzqRecordBO">
+         update  zxzq_holding  set  securitiesnum =securitiesnum + #{securitiesnum}    where memberid= #{memberid}
+    </update>
+
+    <!--特殊情况 下单记录-->
+    <insert id="specialSaveRecord"  parameterType="com.fh.entity.zxzq.ZxzqRecordBO">
+        insert into  zxzq_record  (memberid ,securitiesid,securities,securitiesnum,price,realprice,remark,levered,otime ,frozen)
+        VALUES (#{memberid},#{securitiesid} ,#{securities} ,#{securitiesnum} ,#{price},#{realprice},#{remark} ,#{levered} , now(),#{frozen})
+    </insert>
+    <!--登陆-->
+    <select id="login"  parameterType="com.fh.entity.zxzq.ZxzqLoginVo"  resultType="com.fh.entity.zxzq.ZxzqMemberBo" >
+        select * from  member   where  member_name = #{userName} and member_passwd = #{passWord}
+    </select>
+    <!--更新登录时间-->
+    <update id="updateTime" parameterType="com.fh.entity.zxzq.ZxzqLoginVo" >
+        update member SET
+        member_login_time=UNIX_TIMESTAMP(),
+		member_old_login_time=UNIX_TIMESTAMP()
+		where member_name = #{userName}
+    </update>
+    <!--查询可提现表-->
+    <select id="queryZxzqDrawcash"  parameterType="com.fh.entity.zxzq.ZxzqCommonBO"  resultType="com.fh.entity.zxzq.ZxzqDrawCashBO" >
+        select id , memberid , securitiesnum  ,(select  money  FROM zxzq_rate ORDER BY ctime DESC LIMIT 0,1) as money from zxzq_drawcash   where memberid= #{memberid}
+    </select>
+    <!--校验用户名-->
+    <select id="queryMemberName"  parameterType="com.fh.entity.zxzq.DoRegisterVo"  resultType="com.fh.entity.bo.UserInfoBO" >
+        select * from member where member_name= #{userName}
+    </select>
+    <!--校验银行卡号是否存在-->
+    <select id="queryBankCard"  parameterType="com.fh.entity.zxzq.DoRegisterVo"  resultType="com.fh.entity.bo.UserInfoBO" >
+        select * from member where member_bankcard= #{bankcard}  LIMIT 1
+    </select>
+    <!--校验推荐人是否存在-->
+    <select id="queryInviter"  parameterType="com.fh.entity.zxzq.DoRegisterVo"  resultType="com.fh.entity.bo.UserInfoBO" >
+        select * from member where member_name= #{inviter}
+    </select>
+    <!--初始化个人账户-->
+    <insert id="doInitBalance"  parameterType="com.fh.entity.zxzq.BalanceVo">
+        insert into tb_userbalance (userid,reward,intbalance,accbalance,remainbalance,name) VALUES (#{userid},#{reward},#{intbalance},#{accbalance},#{remainbalance},#{name})
+    </insert>
+    <insert id="doRegister"  parameterType="com.fh.entity.zxzq.DoRegisterVo">
+
+       insert into member (
+		member_name,
+		member_passwd,
+		member_mobile,
+		member_email,
+		member_truename,
+		securities_id,
+		member_address,
+		member_sex,
+		member_idcard,
+		member_bankname,
+		member_bankcard,
+		member_area,
+		securities_team,
+		member_cardtype,
+		member_time,
+		member_login_time,
+		member_old_login_time,
+		network_id,
+		network_team
+		) values (
+		#{userName},
+		#{passWord},
+		#{mobile},
+		#{email},
+		#{name},
+		#{inviter},
+		#{address},
+		#{sex},
+		#{idcard},
+		#{bankName},
+		#{bankcard},
+		#{area},
+		#{teamSign},
+		#{cardType},
+		UNIX_TIMESTAMP(),
+		UNIX_TIMESTAMP(),
+		UNIX_TIMESTAMP(),
+		#{network_id},
+		#{network_team}
+		)
+    </insert>
+
+
+    <!--查询goods表-->
+    <select id="queryZxzqGoods"  parameterType="com.fh.entity.zxzq.ZxzqCommonBO"  resultType="com.fh.entity.zxzq.ZxzqGoodsBo" >
+        select * from zxzq_goods  where id =#{id}
+    </select>
+
+    <!--可提现证券记录生成-->
+    <insert id="withdrawCashRecord"  parameterType="com.fh.entity.zxzq.ZxzqCommonBO" >
+        insert into   zxzq_drawcash_record  (memberid , status ,securitiesnum ,time )
+        select memberid ,3 ,securitiesnum ,now() from  zxzq_drawcash  where memberid=#{memberid}
+    </insert>
+    <!--可提现证券表清空-->
+    <update id="clearWithdrawCash"  parameterType="com.fh.entity.zxzq.ZxzqCommonBO" >
+        update  zxzq_drawcash  set securitiesnum=0  where  memberid =#{memberid}
+    </update>
+
+    <!--基本信息可提现清空-->
+    <update id="clearInformationSecurities"  parameterType="com.fh.entity.zxzq.ZxzqCommonBO" >
+        update  zxzq_information  set securities=0  where  memberid =#{memberid}
+    </update>
+
+    <!--基本信息可提现清空-->
+    <insert id="clearInformationRecordSecurities"  parameterType="com.fh.entity.zxzq.ZxzqCommonBO" >
+        insert  into  zxzq_information_record   (memberid ,securities ,type ,time)
+        select memberid,securities ,3 ,now() from  zxzq_information  where memberid=#{memberid}
+    </insert>
+
+    <!--钱包增加-->
+    <update id="addZxzqWallet"  parameterType="com.fh.entity.zxzq.ZxzqCommonBO" >
+        update   zxzq_wallet  set   money =money +  #{money} where memberid=#{memberid}
+    </update>
+
+    <!--基本信息可提现清空-->
+    <insert id="addZxzqWalletRecord"  parameterType="com.fh.entity.zxzq.ZxzqCommonBO" >
+        INSERT  into   zxzq_wallet_record  (memberid , payrmoney , paypmoney,paytime, paytype) VALUES
+        (#{memberid} ,#{money} ,#{pmoney},now() ,4)
+    </insert>
+
+
+    <!--查询钱包-->
+    <select id="queryZxzqWallet"  parameterType="com.fh.entity.zxzq.ZxzqCommonBO"  resultType="com.fh.entity.zxzq.ZxzqWalletBo" >
+        select * from zxzq_wallet  where memberid=#{memberid}
+    </select>
+
+
+    <!--初始化zxzq_drawcash-->
+    <insert id="initializtionDrawcash"  parameterType="java.lang.Integer">
+        insert   INTO zxzq_drawcash (memberid,securitiesnum) VALUES  (#{memberid},0)
+    </insert>
+    <!--初始化zxzq_drawcash-->
+    <insert id="initializtionInformation"  parameterType="java.lang.Integer">
+        insert INTO zxzq_information  (memberid,welfare,integration,securities) VALUES  (#{memberid},0,0,0)
+    </insert>
+    <!--查询新注册的memberinfo-->
+    <select id="queryByMemberid" parameterType="java.lang.Integer" resultType="com.fh.entity.bo.UserInfoBO">
+        select * from member where member_id=#{memberid}
+    </select>
+
+    <!--初始化zxzq_drawcash-->
+    <insert id="initializtionWallet"  parameterType="com.fh.entity.bo.UserInfoBO">
+        insert INTO zxzq_wallet ( memberid,membername,money,frozen) VALUES  (#{member_id},#{member_name},0,0)
+    </insert>
+
+    <insert id="initializtionMemberLevel"  parameterType="com.fh.entity.bo.UserInfoBO">
+        insert INTO zxzq_member_level  (member_id ,member_sn) VALUES  (#{member_id},#{member_sn})
+    </insert>
+
+    <!--=====================购买证券=============================================-->
+    <!--购买证券更新钱包余额-->
+    <update id="updateWalletMoney" parameterType="com.fh.entity.zxzq.ZxzqWalletBo">
+        update zxzq_wallet set money=#{money} where memberid=#{memberid}
+    </update>
+
+
+    <!--生成钱包消费记录-->
+    <insert id="saveWalletReward"  parameterType="com.fh.entity.zxzq.ZxzqWalletBo" >
+        INSERT  into   zxzq_wallet_record  (memberid , payrmoney , payid , paytime , paytype  , paystatus) VALUES
+        (#{memberid} , #{payrmoney} , #{payid} , now() , 5  , 1)
+    </insert>
+
+    <!--购买证券判断是否有欠款-->
+    <select id="checkRecordRealprice" parameterType="com.fh.entity.zxzq.ZxzqCommonBO" resultType="com.fh.entity.zxzq.ZxzqRecordBO">
+        select * from zxzq_record where memberid =#{memberid}
+    </select>
+
+
+    <!--根据id获取member信息-->
+    <select id="queryMemberById" parameterType="com.fh.entity.bo.UserInfoBO" resultType="com.fh.entity.bo.UserInfoBO">
+        select * from member where member_id=#{member_id}
+    </select>
+
+
+    <!--获取推荐人的id  (根据member_sn查询id)-->
+    <select id="queryIdByUserName" parameterType="com.fh.entity.bo.UserInfoBO" resultType="com.fh.entity.bo.UserInfoBO">
+        select * from member where member_sn=#{securities_id}
+    </select>
+
+    <!--添加报单推荐人奖励表-->
+    <insert id="insertReward" parameterType="com.fh.entity.zxzq.ZxzqReward">
+        insert into zxzq_reward (memberid,securitiesid,invitedid,invitelevel,rewardpoint,rewardnum,rewardtime) values (#{memberid},#{securitiesid},#{invitedid},#{invitelevel},#{rewardpoint},#{rewardnum},now())
+    </insert>
+
+    <!--生成上三级推荐人奖励realprice等于零的用户结算 （status 改成1）-->
+    <update id="updateRecordStatus" parameterType="java.lang.Integer" >
+        update zxzq_record set status = 1 where memberid=#{memberId}
+    </update>
+
+
+
+    <!--推荐人 获得证券数记录(福利 积分 可提现证券数)-->
+    <update id="updateInformation" parameterType="com.fh.entity.zxzq.ZxzqInformationBO">
+        UPDATE zxzq_information SET assigned=#{assigned} where memberid=#{memberid}
+    </update>
+
+    <!--推荐人 获得证券数记录(福利 积分 可提现证券数)-->
+    <insert id="saveInformation" parameterType="com.fh.entity.zxzq.ZxzqInformationBO">
+        insert into zxzq_information (memberid,assigned) VALUES (#{memberid},#{assigned})
+    </insert>
+
+    <!--生成推荐人获得奖励记录-->
+    <insert id="saveInformationRecord" parameterType="com.fh.entity.zxzq.ZxzqInformationBO">
+        insert into zxzq_information_record (memberid,securitiesid,type,time,) VALUES (#{memberid},#{securitiesid},#{type},now(),#{assigned})
+    </insert>
+
+    <!--获取可购买证券总数-->
+    <select id="ckeckVariable" parameterType="com.fh.entity.zxzq.ZxzqVariableBO" resultType="com.fh.entity.zxzq.ZxzqVariableBO">
+        select * from zxzq_variable where type=1
+    </select>
+
+    <!--更新可购买证券总数-->
+    <update id="updateVariable" parameterType="com.fh.entity.zxzq.ZxzqVariableBO">
+        update zxzq_variable set amount=#{amount} where type = 1
+    </update>
+
+    <!-- 获取推荐人未获得奖励前可提现证券数量-->
+    <select id="checkDrawCash" parameterType="com.fh.entity.zxzq.ZxzqReward" resultType="com.fh.entity.zxzq.ZxzqDrawCashBO">
+        select id as id , memberid as member_id , securitiesnum as securitiesnum from zxzq_drawcash where memberid=#{memberid}
+    </select>
+
+    <!--更新推荐人可提现证券数量-->
+    <update id="updateDrawCash" parameterType="com.fh.entity.zxzq.ZxzqDrawCashBO">
+        UPDATE zxzq_drawcash SET securitiesnum=#{securitiesnum} where memberid=#{member_id}
+    </update>
+
+    <!--获取当日证券兑换率-->
+    <select id="queryRate"  resultType="com.fh.entity.zxzq.ZxzqDrawCashBO" >
+        select  money  FROM zxzq_rate ORDER BY ctime DESC LIMIT 0,1
+    </select>
+
+    <!---->
+    <insert id="saveDrawCash" parameterType="com.fh.entity.zxzq.ZxzqDrawCashBO">
+        INSERT  into zxzq_drawcash (memberid,securitiesnum) values (#{member_id},#{securitiesnum})
+    </insert>
+
+    <!--校验推荐人是否存在-->
+    <select id="checkInviterByMemberId" parameterType="java.lang.Integer" resultType="com.fh.entity.bo.UserInfoBO">
+        select * from member where member_id = #{member_id}
+    </select>
+
+    <!--定时作业-->
+    <!--添加释放记录-->
+    <insert id="automaticRelease1">
+        insert into zxzq_drawcash_record (status ,memberid , releasenum, securitiesnum, securitiesnum_after, time)
+        select 2, h.memberid,
+        TRUNCATE( if(r.securities > TRUNCATE(h.securitiesnum * 0.999,2), TRUNCATE(h.securitiesnum-r.securities,2),TRUNCATE(h.securitiesnum * 0.001,2)),2),
+        h.securitiesnum,
+        TRUNCATE(if(r.securities > TRUNCATE(h.securitiesnum * 0.999,2),r.securities,TRUNCATE(h.securitiesnum - TRUNCATE(
+        if(r.securities > TRUNCATE(h.securitiesnum * 0.999,2),TRUNCATE(h.securitiesnum-r.securities,2) ,TRUNCATE(h.securitiesnum * 0.001,2)),2),2)),2),
+        NOW()
+        from zxzq_holding h ,view_zq r where h.memberid = r.memberid  and h.securitiesnum > r.securities and r.price= 0
+
+    </insert>
+
+    <update id="automaticRelease2">
+        replace into zxzq_drawcash (memberid, securitiesnum) select h.memberid ,
+        TRUNCATE(d.securitiesnum + sum(if(r.securities > TRUNCATE(h.securitiesnum*0.999,2),
+        TRUNCATE(h.securitiesnum-r.securities,2),TRUNCATE(h.securitiesnum*0.001,2))),2)
+        from zxzq_holding h inner join zxzq_drawcash d on d.memberid = h.memberid
+        inner join view_zq r on  h.securitiesnum > r.securities  and h.memberid=r.memberid and r.price = 0 group by h.memberid
+    </update>
+
+    <!--查询要更新的用户id-->
+    <select id="qeuryMemberIdForDrawcase" resultType="com.fh.entity.zxzq.ZxzqDrawCashBO">
+        select h.memberid ,
+        TRUNCATE(d.securitiesnum + sum(if(r.securities > TRUNCATE(h.securitiesnum*0.999,2),
+        TRUNCATE(h.securitiesnum-r.securities,2),TRUNCATE(h.securitiesnum*0.001,2))),2) as securitiesnum
+        from zxzq_holding h inner join zxzq_drawcash d on d.memberid = h.memberid
+        inner join view_zxzq_record r on  h.securitiesnum > r.securities  and h.securitiesid=r.securitiesid and r.price = 0 group by h.memberid
+    </select>
+
+    <insert id="automaticReleaseinsert" parameterType="com.fh.entity.zxzq.ZxzqDrawCashBO">
+        insert into zxzq_drawcash (memberid, securitiesnum) VALUES (member_id, securitiesnum)
+    </insert>
+
+    <update id="automaticReleaseupdate" parameterType="com.fh.entity.zxzq.ZxzqDrawCashBO">
+        update zxzq_drawcash set securitiesnum = #{securitiesnum}  where memberid = #{member_id}
+    </update>
+
+    <!--向information_record中添加记录-->
+    <insert id="automaticRelease3">
+        insert into zxzq_information_record (memberid, time, type, securities)
+        select h.memberid, NOW(), 2,sum(TRUNCATE(h.securitiesnum * 0.001,2)) from zxzq_holding h ,view_zq r where h.memberid = r.memberid
+        and r.price = 0 and h.securitiesnum > r.securities  group by h.memberid
+    </insert>
+
+    <update id="automaticRelease4">
+         update zxzq_holding h, view_zq r set h.securitiesnum =
+        if( r.securities > TRUNCATE(h.securitiesnum * 0.999,2) , r.securities,  TRUNCATE(h.securitiesnum * 0.999,2)) where r.memberid = h.memberid
+        and r.price = 0
+    </update>
+
+    <!--更新information的可提现证券数-->
+    <update id="automaticRelease5">
+        update zxzq_information i, zxzq_drawcash d set i.securities = d.securitiesnum where i.memberid = d.memberid
+    </update>
+
+
+
+    <parameterMap type="java.util.Map" id="memberIdMap">
+        <parameter property="memberid" jdbcType="INTEGER" mode="IN"/>
+        <parameter property="securitiesSum" jdbcType="DECIMAL" mode="IN"/>
+        <parameter property="cursor" jdbcType="INTEGER" mode="IN"/>
+        <parameter property="rate" jdbcType="DECIMAL" mode="IN" />
+    </parameterMap>
+
+    <!--查询当前用户的持有证券的总和-->
+    <select id="getSecuritiesnumSumByMemberid" parameterMap="memberIdMap" resultType="java.lang.Double">
+        select SUM(securitiesnum) from zxzq_holding where memberid = #{memberid}
+    </select>
+
+    <!--查询当前用户的奖励-->
+    <select id="getAssignedByMemberid" parameterMap="memberIdMap" resultType="java.lang.Double">
+        select  assigned  from zxzq_information where memberid = #{memberid}
+    </select>
+
+    <!--当持有证券总和大于奖励证券-->
+    <update id="updateHoldingBig" parameterType="com.fh.entity.zxzq.ZxzqHoldingBO" >
+        update zxzq_holding h ,zxzq_information i set h.securitiesnum = if(h.securitiesnum > i.assigned * 0.8, TRUNCATE(h.securitiesnum - i.assigned * 0.8,2), 0),
+        i.assigned = if(h.securitiesnum > i.assigned * 0.8,0, TRUNCATE(if((i.assigned - #{securitiesnum} * 1.25) > 0,i.assigned - #{securitiesnum} * 1.25, 0 ) ,2)) where h.memberid = #{memberid}
+        and i.memberid = #{memberid}  and i.assigned > 0 and h.id = #{id}
+    </update>
+
+    <!--查询用户持有证券集合-->
+    <select id="getMemberHolding" parameterMap="memberIdMap" resultType="com.fh.entity.zxzq.ZxzqHoldingBO">
+        select * from zxzq_holding where memberid = #{memberid} order by id desc
+    </select>
+
+    <select id="getMemberOrderNum" parameterMap="memberIdMap" resultType="java.lang.Integer">
+        select id from zxzq_holding where memberid = #{memberid}
+    </select>
+
+
+    <!--当持有证券总和小于奖励证券-->
+    <update id="updateHoldingSmall" parameterMap="memberIdMap" >
+        update zxzq_holding h, zxzq_information i
+        set h.securitiesnum = if(#{securitiesSum} > i.assigned * 0.8, h.securitiesnum, 0),
+        i.assigned = IF(h.securitiesnum > i.assigned * 0.8, h.securitiesnum, TRUNCATE(i.assigned - h.securitiesnum * 1.25,2))
+        where h.memberid = #{memberid} and i.memberid = #{memberid} and i.assigned > 0;
+    </update>
+
+    <!--用户持有证券更新-->
+    <update id="updateHoldingEveryWeek" parameterMap="memberIdMap" statementType="CALLABLE">
+        {call update_holding(?)}
+    </update>
+
+
+    <!--推荐人为空时，查询顶级团队标示-->
+    <select id="getTopTeamSign" resultType="java.lang.String">
+        select max(securities_team)  from member  where  LENGTH(securities_team)='4' order by  securities_team
+    </select>
+
+
+    <!--通过inviterid查询证券推荐人团队标识符-->
+    <select id="getTeamSignBySecuritiesId" parameterType="com.fh.entity.vo.UserInfoVO" resultType="com.fh.entity.bo.UserInfoBO">
+        select max(securities_team) as securities_team from member where securities_id = #{securities_id}
+    </select>
+
+    <!--通过member_sn查询团队标示-->
+    <select id="getTeamSignByMemberName" parameterType="com.fh.entity.vo.UserInfoVO" resultType="com.fh.entity.bo.UserInfoBO">
+        select max(securities_team) as securities_team from member where member_sn = #{securities_id}
+    </select>
+
+    <!--更新用户信息（团队标示，推荐人）-->
+    <update id="udateSecuritiesTeam" parameterType="com.fh.entity.bo.UserInfoBO">
+        update member set securities_id = #{securities_id},securities_team = #{securities_team} where member_name = #{member_name}
+    </update>
+
+    <!--根据token查询用户基本信息-->
+    <select id="queryByid" parameterType="com.fh.entity.bo.TokenBO" resultType="com.fh.entity.bo.UserInfoBO">
+        select * from member where member_id = #{member_id}
+    </select>
+    <!--修改信息查询银行卡-->
+    <select id="findBankCardForUpdate" parameterType="com.fh.entity.vo.UpdateUserInfoVo" resultType="com.fh.entity.bo.UserInfoBO">
+        select * from  member where 1=1 and member_bankcard =#{bankcard}
+    </select>
+    <!--修改基本信息-->
+    <update id="updateUserInfo" parameterType="com.fh.entity.bo.UserInfoBO">
+        update member
+        <set>
+            <if test="member_truename!=null and member_truename!=''">
+                member_truename= #{member_truename},
+            </if>
+
+            <if test="member_sex!=null and member_sex!=''">
+                member_sex= #{member_sex},
+            </if>
+
+            <if test="member_idcard!=null and member_idcard!=''">
+                member_idcard= #{member_idcard},
+            </if>
+
+            <if test="member_bankname!=null and member_bankname!=''">
+                member_bankname= #{member_bankname},
+            </if>
+
+            <if test="member_mobile!=null and member_mobile!=''">
+                member_mobile= #{member_mobile},
+            </if>
+
+            <if test="member_area!=null and member_area!=''">
+                member_area= #{member_area},
+            </if>
+
+            <if test="member_address!=null and member_address!=''">
+                member_address= #{member_address},
+            </if>
+
+            <if test="member_email!=null and member_email!=''">
+                member_email= #{member_email},
+            </if>
+
+            <if test="member_cardtype!=null and member_cardtype!=''">
+                member_cardtype= #{member_cardtype},
+            </if>
+
+            <if test="member_bankcard!=null and member_bankcard!=''">
+                member_bankcard= #{member_bankcard}
+            </if>
+        </set>
+        WHERE member_id =#{member_id}
+    </update>
+    <select id="queryInformation" parameterType="com.fh.entity.zxzq.ZxzqReward" resultType="com.fh.entity.zxzq.ZxzqInformationBO">
+        select * from zxzq_information where memberid=#{invitedid}
+    </select>
+
+
+
+    <!--保存 用户可提现证券明细-->
+    <insert id="saveDrawCashRecord" parameterType="com.fh.entity.zxzq.ZxzqDrawCashBO">
+        INSERT into zxzq_drawcash_record (memberid,securitiesnum,status,securitiesid,welfare,integration) VALUES (#{member_id},#{securitiesnum},#{status},#{securitiesid},#{welfare},#{integration})
+    </insert>
+
+
+    <!--通过member_id查询订单列表-->
+    <select id="findRecordByMemberId" parameterType="com.fh.entity.zxzq.ZxzqRecordVo" resultType="com.fh.entity.zxzq.ZxzqRecordBO">
+        select * from zxzq_record where memberid = #{memberid}
+    </select>
+
+    <!--通过memberName查询用户信息-->
+    <select id="queryMemberByName" parameterType="java.lang.String" resultType="com.fh.entity.bo.UserInfoBO">
+        select * from member where member_name = #{memberName}
+    </select>
+
+
+    <!--修改密码  查询用户-->
+    <select id="checkMemberForUpdatePassword" parameterType="com.fh.entity.vo.UserInfoVO" resultType="com.fh.entity.bo.UserInfoBO">
+        select * from member where member_name=#{userName} and member_passwd=#{passWord}
+    </select>
+
+    <!--修改密码-->
+    <update id="updatePassword" parameterType="com.fh.entity.bo.UserInfoBO">
+        UPDATE member SET member_passwd=#{member_passwd} where member_id=#{member_id}
+    </update>
+
+
+    <!--Auth:李荣洲 校验推荐人信息-->
+    <select id="checkSecurities_teamByName" parameterType="com.fh.entity.zxzq.DoRegisterVo" resultType="com.fh.entity.bo.UserInfoBO">
+        select * from member where member_name = #{inviter}
+    </select>
+
+    <!--培育佣金 -->
+    <!--查询goods表对应的奖励等级-->
+    <select id="queryInforGoods" parameterType="com.fh.entity.zxzq.ZxzqRecordBO" resultType="com.fh.entity.zxzq.ZxzqGoodsBo">
+        select * from zxzq_goods where securities = #{securities}
+    </select>
+    <!--保存奖励information表-->
+    <update id="setAssigned" parameterType="com.fh.entity.zxzq.ZxzqInformationBO" >
+        UPDATE   zxzq_Information SET assigned = assigned + #{assigned} WHERE memberid=#{memberid}
+    </update>
+    <!--保存奖励记录表-->
+    <insert id="saveZxzqReward" parameterType="com.fh.entity.zxzq.ZxzqReward" >
+        INSERT  INTO zxzq_reward (memberid,securitiesid,invitedid,invitelevel,rewardpoint,rewardnum,rewardtime) VALUES (#{memberid},#{securitiesid},#{invitedid},4,#{rewardpoint},#{rewardnum},#{rewardtime})
+    </insert>
+    <!--通过网络标识查询memberid-->
+    <select id="queryMemberBynetworkTeam" parameterType="java.lang.String" resultType="com.fh.entity.zxzq.ZxzqMemberBo">
+        select * from member  where network_team = #{networkTeamNow}
+    </select>
+
+
+    <!--根据推荐人查找推荐人网络标识-->
+    <select id="findNetworkTeams" parameterType="java.lang.Integer" resultType="com.fh.entity.zxzq.NetWorkBO">
+        select * from member where member_id = #{id}
+    </select>
+
+    <!--查询该推荐人右区是否存在用户-->
+    <select id="checkNetworkTeam" parameterType="com.fh.entity.zxzq.NetWorkBO" resultType="com.fh.entity.zxzq.NetWorkBO">
+        select * from member where network_team =#{network_team}
+    </select>
+
+    <!--获取该推荐人左区最后一个用户id-->
+    <select id="getAllNetworkTeam" parameterType="com.fh.entity.zxzq.NetWorkBO" resultType="com.fh.entity.zxzq.NetWorkBO">
+        select * from member where network_team like #{network_team} order by LENGTH(network_team) desc
+    </select>
+
+    <!--判断新用户是否进行过操作-->
+    <select id="checkNewUserRecord" parameterType="com.fh.entity.zxzq.NetWorkVO" resultType="com.fh.entity.zxzq.ZxzqRecordBO">
+        select id FROM zxzq_record where   memberid = #{newUserId}
+    </select>
+
+    <!--设置用户的佣金-->
+    <insert id="saveRewordEveyRecord" parameterType="com.fh.entity.zxzq.ZxzqReward" >
+        insert into zxzq_reward (memberid, securitiesid, invitedid,invitelevel, rewardpoint, rewardnum, rewardtime) value (${memberid},${securitiesid},${invitedid},${invitelevel},${rewardpoint},TRUNCATE(${rewardnum},2),now())
+    </insert>
+
+    <insert id="saveRewordEveyRecord2" parameterType="com.fh.entity.zxzq.ZxzqReward" >
+        insert into zxzq_reward (memberid, securitiesid,invitelevel, rewardpoint, rewardnum, rewardtime) value (${memberid},${securitiesid},${invitelevel},${rewardpoint},TRUNCATE(${rewardnum},2),now())
+    </insert>
+
+    <!--更新用户的奖励-->
+    <update id="upadteAssigned" parameterType="com.fh.entity.zxzq.ZxzqReward" >
+        update zxzq_information set assigned = assigned + TRUNCATE(#{rewardnum},2) where memberid =#{invitedid}
+    </update>
+
+    <!--获取推荐人下级成员的购买证券数-->
+    <select id="getRecordListSecurities" parameterType="com.fh.entity.zxzq.NetWorkBO" resultType="com.fh.entity.zxzq.ZxzqRecordBO">
+        select * from zxzq_record where memberid=(select member_id from member where network_team = #{network_team})
+    </select>
+
+
+
+    <select id="querySecuritiesTeamBysId" parameterType="com.fh.entity.vo.UserInfoVO" resultType="com.fh.entity.bo.UserInfoBO">
+        select * from member where member_sn = #{securities_id}
+    </select>
+
+    <!--通过memberid 查询 ZxzqRecordBO 中  未奖励状态的数据-->
+    <select id="queryZxzqRecord" parameterType="com.fh.entity.zxzq.ZxzqCommonBO" resultType="com.fh.entity.zxzq.ZxzqRecordBO">
+        select * from zxzq_record where securitiesid = #{securitiesid}  and  status =0;
+    </select>
+    <!--通过memberid 查询 ZxzqRecordBO 中  未奖励状态的数据-->
+    <select id="queryZxzqRecordCommon" parameterType="com.fh.entity.zxzq.ZxzqCommonBO" resultType="com.fh.entity.zxzq.ZxzqRecordBO">
+        select * from zxzq_record where securitiesid = #{securitiesid} ;
+    </select>
+
+    <select id="queryZxzqRecordSum" parameterType="com.fh.entity.zxzq.ZxzqCommonBO" resultType="com.fh.entity.zxzq.ZxzqRecordBO">
+        select memberid , sum(securities)  as  securities   from zxzq_record   where status=0  and   memberid = #{memberid}
+    </select>
+
+    <select id="queryqueryZxzqRecordBySecuritiesid" parameterType="com.fh.entity.zxzq.ZxzqCommonBO" resultType="com.fh.entity.zxzq.ZxzqRecordBO">
+        select memberid, securities, securitiesid, realprice from zxzq_record   where securitiesid = #{securitiesid}
+    </select>
+
+    <!--登陆-->
+    <select id="queryMember"  parameterType="com.fh.entity.zxzq.ZxzqCommonBO"  resultType="com.fh.entity.zxzq.ZxzqMemberBo" >
+        select * from  member   where  member_id = #{memberid} and member_passwd = #{passWord}
+    </select>
+
+    <!--根据用户id查询用户信息-->
+    <select id="queryZxzqMemberById" parameterType="com.fh.entity.zxzq.ZxzqCommonBO" resultType="com.fh.entity.zxzq.ZxzqMemberBo">
+        select * from member  where member_id = #{memberid}
+    </select>
+
+    <!--生成业绩-->
+    <update id="updateInfomation" parameterType="com.fh.entity.zxzq.ZxzqRecordBO">
+        update  zxzq_information  set  achievement = achievement + #{realprice}   where
+        memberid = #{memberid}
+    </update>
+
+    <!--更新record表-->
+    <update id="updatereocrd" parameterType="com.fh.entity.zxzq.ZxzqRecordBO">
+        update  zxzq_record   set  status=1  where memberid=#{memberid} and  securitiesid = #{securitiesid}
+    </update>
+
+    <select id="queryInforMationAchievement1" parameterType="String" resultType="com.fh.entity.zxzq.ZxzqInformationBO">
+         select sum(realprice) as securities from zxzq_record where status=1  and   memberid  in (select member_id from member  where  network_team LIKE  #{str1})
+    </select>
+    <select id="queryInforMationAchievement2" parameterType="String" resultType="com.fh.entity.zxzq.ZxzqInformationBO">
+         select sum(realprice) as securities from zxzq_record where status=1 and   memberid  in (select member_id from member  where  network_team LIKE  #{str2})
+    </select>
+
+    <!--生成新用户网络标识-->
+    <update id="setNewNetworkTeam" parameterType="com.fh.entity.zxzq.NetWorkBO">
+        update member
+        <set>
+            <if test="network_id!=null and network_id!=''">
+                network_id= #{network_id},
+            </if>
+            <if test="member_id!=null and member_id!=''">
+                network_team= #{network_team},
+            </if>
+        </set>
+        where member_id=#{member_id}
+    </update>
+
+    <!--获取推荐人账号-->
+    <select id="findUserNameById" parameterType="com.fh.entity.bo.UserInfoBO" resultType="com.fh.entity.bo.UserInfoBO">
+        select * from member where member_id =#{member_id}
+    </select>
+
+
+
+                   <!---————————————————删除——————————————-->
+    <delete id="deleteUserbalance" parameterType="com.fh.entity.zxzq.ZxzqCommonBO">
+        delete from tb_userbalance  where userid=#{memberid}
+    </delete>
+
+
+    <delete id="deleteScorerecord" parameterType="com.fh.entity.zxzq.ZxzqCommonBO">
+       delete from tb_scorerecord  where userid = #{memberid}
+    </delete>
+
+    <delete id="deleteAmountrecord" parameterType="com.fh.entity.zxzq.ZxzqCommonBO">
+        delete from tb_amountrecord  where uid= #{memberid}
+    </delete>
+
+    <delete id="deleteZxzqWallet" parameterType="com.fh.entity.zxzq.ZxzqCommonBO">
+        delete from zxzq_wallet  where memberid= #{memberid}
+    </delete>
+
+    <delete id="deleteZxzqInformation" parameterType="com.fh.entity.zxzq.ZxzqCommonBO">
+       delete from zxzq_information  where memberid=#{memberid}
+    </delete>
+
+    <delete id="deleteZxzqDrawcash" parameterType="com.fh.entity.zxzq.ZxzqCommonBO">
+       delete from member  where member_id=#{memberid}
+    </delete>
+
+    <select id="queryMemberByNetWork" parameterType="com.fh.entity.zxzq.DoRegisterVo" resultType="com.fh.entity.zxzq.ZxzqMemberBo">
+             select * from member  where  member_sn=#{network_id}
+    </select>
+
+    <select id="queryMemberByNetWorkList" parameterType="com.fh.entity.zxzq.ZxzqMemberBo" resultType="com.fh.entity.zxzq.ZxzqMemberBo">
+        select * from member  where  network_id=#{member_sn}
+    </select>
+
+    <select id="queryMemberByMemberSn" parameterType="com.fh.entity.zxzq.ZxzqCommonBO" resultType="com.fh.entity.zxzq.ZxzqMemberBo">
+       select * from member  where  member_sn=#{member_sn}
+    </select>
+
+    <update id="updateMemberSn">
+        update   member  set   member_sn =     CONCAT_WS('','cn',('51283574' + member_id))
+    </update>
+
+
+    <!--**********************************************积分提现到证券钱包开始******************************************!-->
+    <!--auth:李荣洲 校验token是否过期-->
+    <select id="queryByToken" parameterType="com.fh.entity.vo.TokenVo" resultType="com.fh.entity.bo.UserInfoBO">
+        select * from member where member_id=(select member_id from mb_user_token where token=#{token})
+    </select>
+
+    <!--auth:李荣洲 通过memberid查询个人账户积分数-->
+    <select id="queryBalanceByMemberid" parameterType="com.fh.entity.bo.UserInfoBO" resultType="java.lang.Integer">
+        select intbalance from tb_userbalance where userid=#{member_id}
+    </select>
+    
+    <!--auth:李荣洲 获取当日净值-->
+    <select id="queryTodayEquity" resultType="java.lang.Float">
+        select equity from tb_equity ORDER BY createdate DESC limit 1
+    </select>
+
+    <!--auth:李荣洲 向入证券钱包转入现金-->
+    <update id="setMoneyByMemberid" parameterType="com.fh.entity.bo.UserInfoBO">
+        update zxzq_wallet
+        set money=money+#{money}
+        where memberid=#{member_id}
+    </update>
+
+    <!--auth:李荣洲 清零个人账户的积分-->
+    <update id="clearBalanceByMemberid" parameterType="com.fh.entity.bo.UserInfoBO">
+        update tb_userbalance
+        set intbalance=0
+
+        where userid=#{member_id}
+    </update>
+    <!--**********************************************积分提现到证券钱包结束******************************************!-->
+
+
+    <!--现金状态，是否冻结-->
+    <update id="updateStatus" parameterType="com.fh.entity.zxzq.ZxzqInformationBO">
+        update   zxzq_information  set   status = #{status} WHERE  memberid = #{memberid}
+    </update>
+
+    <!--===========================定时生成上三级奖励===================================-->
+
+    <!--查询待分配的奖励人-->
+    <select id="queryScuritiesEveryday" resultType="com.fh.entity.zxzq.ZxzqRecordBO">
+        select * from zxzq_record where status = 0 and frozen = 0 and memberid in (select member_id from member where network_team like '01%') ORDER BY otime DESC
+    </select>
+
+    <!--根据购买证券数量获取投资额度-->
+    <select id="findZxzqGoods" parameterType="java.lang.String" resultType="com.fh.entity.zxzq.ZxzqGoodsBo">
+        select * from zxzq_goods where securities =#{securities}
+    </select>
+
+
+    <!--查询待分配的奖励人(测试用)-->
+    <select id="queryScuritiesById" parameterType="com.fh.entity.zxzq.ZxzqCommonBO" resultType="com.fh.entity.zxzq.ZxzqRecordBO">
+        select * from zxzq_record where status = 0 and frozen = 0 and memberid = #{memberid}  ORDER BY otime DESC
+    </select>
+
+    <select id="findMemberById" parameterType="com.fh.entity.zxzq.ZxzqCommonBO" resultType="com.fh.entity.bo.UserInfoBO">
+        select * from member where member_id =#{memberid}
+    </select>
+    <delete id="deleteRecord" parameterType="com.fh.entity.zxzq.ZxzqCommonBO">
+        delete from zxzq_record  where securitiesid=#{securitiesid}
+    </delete>
+    <delete id="deleteHolding" parameterType="com.fh.entity.zxzq.ZxzqCommonBO">
+        delete from zxzq_holding  where securitiesid=#{securitiesid}
+    </delete>
+    <update id="updateRecord" parameterType="com.fh.entity.zxzq.ZxzqCommonBO">
+          update zxzq_record   set realprice=#{money}  ,remark =#{remark}  where securitiesid=#{securitiesid}
+    </update>
+
+    <!--auth:李荣洲 提现申请-->
+    <!--获取当前账户的钱包金额-->
+    <select id="findMemberInfoByMemberid" parameterType="com.fh.entity.vo.WithdrawCashVo" resultType="com.fh.entity.bo.UserInfoBO">
+        select * from member where member_id=#{member_id}
+    </select>
+    <select id="findMoneyByMemberid" parameterType="com.fh.entity.vo.WithdrawCashVo" resultType="java.lang.Double">
+        select money from zxzq_wallet where memberid=#{member_id}
+    </select>
+    <!--冻结钱包-->
+    <update id="updateWallet" parameterType="com.fh.entity.vo.WithdrawCashVo">
+        update zxzq_wallet   set money=money-#{cash}  ,frozen =frozen+#{cash}  where memberid =#{member_id}
+    </update>
+<!--生成提现记录-->
+    <insert id="saveCash" parameterType="com.fh.entity.vo.ZQCashLogVo" >
+        insert into zxzq_cash (cash_sn, cash_member_id,cash_member_name,cash_amount,cash_bank_name, cash_bank_no,cash_bank_user,cash_add_time,
+        cash_payment_time,cash_payment_state,cash_remark) value
+        (#{cash_sn},#{cash_member_id},#{cash_member_name},#{cash_amount},#{cash_bank_name},#{cash_bank_no},#{cash_bank_user},#{cash_add_time},
+        #{cash_payment_time},#{cash_payment_state},#{cash_remark})
+    </insert>
+<!--生成提现明细-->
+    <insert id="savezqpd_log" parameterType="com.fh.entity.vo.ZQpdLogVo" >
+        insert into zxzqpd_log (zqlg_member_id, zqlg_member_name,zqlg_admin_name, zqlg_type, zqlg_av_amount, zqlg_freeze_amount,zqlg_add_time,zqlg_desc)
+        value (#{zqlg_member_id},#{zqlg_member_name},#{zqlg_admin_name},#{zqlg_type},#{zqlg_av_amount},#{zqlg_freeze_amount},#{zqlg_add_time},#{zqlg_desc})
+    </insert>
+    <!--申请提现结束-->
+
+    <!--撤销提现申请开始-->
+    <!--还原证券钱包-->
+
+    <update id="rollbackMoney" parameterType="com.fh.entity.vo.WithdrawCashVo">
+        update zxzq_wallet   set money=money+#{cash}  ,frozen = frozen-#{cash} where memberid =#{member_id}
+    </update>
+    <update id="deleteCashInfo" parameterType="com.fh.entity.vo.WithdrawCashVo">
+        update zxzq_cash  set cash_isdelete='1' where cash_sn =#{cash_sn}
+    </update>
+    <select id="findFrozen" parameterType="com.fh.entity.vo.WithdrawCashVo" resultType="java.math.BigDecimal">
+        select cash_amount from zxzq_cash  where cash_sn=#{cash_sn} and cash_isdelete='0' and cash_payment_state='0'
+    </select>
+    <!--撤销提现申请结束-->
+
+    <!-- 确认提现开始 -->
+    <!--扣除预冻结款-->
+    <update id="modifyFrozen" parameterType="com.fh.entity.vo.WithdrawCashVo">
+        update zxzq_wallet   set frozen =frozen-#{cash}  where memberid =#{member_id}
+    </update>
+<!--修改个人提现记录-->
+    <update id="updatePaymentState" parameterType="com.fh.entity.vo.WithdrawCashVo">
+        update zxzq_cash   set cash_payment_state='1'  where cash_member_id =#{member_id} and cash_sn=#{cash_sn}
+    </update>
+
+    <!--确认提现结束-->
+    <select id="findAchievement" resultType="com.fh.entity.zxzq.ZxzqRecordBO">
+     select  * from zxzq_record  where frozen=1  order by otime
+    </select>
+
+
+
+
+    <!--查询钱包-->
+    <select id="queryWallet"  parameterType="com.fh.entity.zxzq.ZxzqCommonBO"  resultType="com.fh.entity.zxzq.ZxzqWalletBo">
+       select * from zxzq_wallet  where  memberid=#{memberid}
+    </select>
+
+    <!--*******************************************************奖金结算************************************************************-->
+
+
+    <!--查询应结算奖金订单-->
+    <select id="queryRecordSecuritiesid" parameterType="com.fh.entity.zxzq.ZxzqRecordInFormation" resultType="com.fh.entity.zxzq.ZxzqRecordInFormation">
+       select memberid,securitiesid ,sum(realprice) as  realprice from zxzq_record   where   securitiesid=#{securitiesid}   GROUP BY securitiesid
+    </select>
+     <!--查询应结算奖金订单-->
+     <select id="NewQueryZxzqRecord" resultType="com.fh.entity.zxzq.ZxzqRecordBO">
+         select * from view_jiesuan where price=0 and status=0
+</select>
+    <select id="NewQueryZxzqRecord1" resultType="com.fh.entity.zxzq.ZxzqRecordBO">
+        select * from zxzq_record where status=0  and realprice>0
+    </select>
+     <!--查询应结算奖金订单全部信息-->
+     <select id="NewQueryZxzqRecordInFormation" parameterType="com.fh.entity.zxzq.ZxzqRecordBO" resultType="com.fh.entity.zxzq.ZxzqRecordInFormation">
+           select t2.id,t2.memberid,t2.securitiesid,t2.price,t2.realprice,t2.levered,t1.member_name,t1.member_sn,t1.network_team from (select * from member) as t1,(select * from zxzq_record where   securitiesid=#{securitiesid}) as t2 where memberid = member_id  order by levered  desc   LIMIT 1
+     </select>
+    <select id="NewQueryZxzqRecordInFormation1" parameterType="com.fh.entity.zxzq.ZxzqRecordBO" resultType="com.fh.entity.zxzq.ZxzqRecordInFormation">
+        select t2.id,t2.memberid,t2.securitiesid,t2.price,t2.realprice,t2.levered,t1.member_name,t1.member_sn,t1.network_team from (select * from member) as t1,(select * from zxzq_record where   id=#{id}) as t2 where memberid = member_id  order by levered  desc   LIMIT 1
+    </select>
+    <!--查询人员上三级  ,奖励金额-->
+    <select id="NewQueryZxzqRecordThree" parameterType="com.fh.entity.zxzq.ZxzqRecordInFormation"  resultType="com.fh.entity.zxzq.ZxzqRecordThree">
+   select t1.member_id,t1.member_name,t2.member_id as member_id1  ,t2.member_name as  member_name1,t5.t_1,t3.member_id as  member_id2,t3.member_name as member_name2,t5.t_2,t4.member_id as  member_id3,t4.member_name as member_name3,t5.t_3 from member as t1,member as t2,member as t3,member as t4,zxzq_goods as t5,(select * from zxzq_member_level where member_sn=#{member_sn}) as t6 where t1.member_sn=#{member_sn} and t2.member_sn =t1.securities_id and t3.member_sn = t2.securities_id and t4.member_sn = t3.securities_id and t5.id=t6.member_level
+    </select>
+
+    <!--增加奖金-->
+    <update id="NewUpdateInformation" parameterType="com.fh.entity.zxzq.ZxzqReward" >
+         update zxzq_information set assigned=assigned+ #{rewardnum}  where memberid=#{invitedid}
+    </update>
+    <!--增加奖金-->
+    <update id="NewSaveReward" parameterType="com.fh.entity.zxzq.ZxzqReward" >
+        insert into zxzq_reward(memberid,securitiesid,invitedid,invitelevel,rewardpoint,rewardnum,rewardtime) values(#{memberid},#{securitiesid},#{invitedid},#{invitelevel},#{rewardpoint},#{rewardnum},NOW())
+    </update>
+
+    <!--更改状态-->
+    <update id="updateRecordStatusNew" parameterType="com.fh.entity.zxzq.ZxzqCommonBO">
+        update zxzq_record set status=1 where  securitiesid =#{securitiesid}
+    </update>
+    <update id="updateRecordStatusNew1" parameterType="com.fh.entity.zxzq.ZxzqCommonBO">
+        update zxzq_record set status=1 where  id =#{id}
+    </update>
+
+    <!--查询出需要新增业绩人员-->
+    <update id="updateZxzqMemberBoList" parameterType="com.fh.entity.zxzq.ZxzqCommonBO" >
+       update zxzq_information set achievement=achievement+ #{money} where memberid IN
+        (select member_id from member where network_team IN (${remark}) order by network_team)
+    </update>
+
+    <!--*******************************************************奖金结算************************************************************-->
+
+    <!--*******************************************************回填************************************************************-->
+
+    <select id="queryByRecordBO"  parameterType="com.fh.entity.zxzq.ZxzqCommonBO"  resultType="com.fh.entity.zxzq.ZxzqRecordBO">
+        select  memberid ,sum(price) - sum(realprice ) as  price  from zxzq_record   where  securitiesid=#{securitiesid} group by  securitiesid
+    </select>
+    <select id="queryByRecordByMember"  parameterType="com.fh.entity.zxzq.ZxzqCommonBO"  resultType="com.fh.entity.zxzq.ZxzqRecordBO">
+       select * from zxzq_record where memberid=#{memberid}
+    </select>
+
+
+    <update id="backWallet"  parameterType="com.fh.entity.zxzq.ZxzqCommonBO" >
+        update  zxzq_wallet  set money =money - #{money}  where memberid=#{memberid}
+    </update>
+
+    <update id="backWalletRecord"  parameterType="com.fh.entity.zxzq.ZxzqCommonBO" >
+        insert into  zxzq_wallet_record  (memberid , paytime ,paytype , payrmoney ,paysn)  VALUE
+        (#{memberid} ,now() ,7 ,#{money} ,#{securitiesid})
+    </update>
+
+    <update id="backSecurities"  parameterType="com.fh.entity.zxzq.ZxzqCommonBO" >
+         insert into  zxzq_record  (memberid ,securitiesid,securities,securitiesnum,price,realprice,levered,otime ,remark)
+         select  memberid  ,securitiesid  ,0 ,0  ,0 , #{money}  ,levered ,now() ,'回填' from  zxzq_record  where securitiesid=#{securitiesid}  and remark not in ('回填','孝康券回填')
+    </update>
+
+    <select id="backSecuritiesMessage"  parameterType="com.fh.entity.zxzq.ZxzqCommonBO"  resultType="com.fh.entity.zxzq.ZxzqRecordBO">
+        select * from viewsecuritiesmessage  where price>0  and  memberid=#{memberid}
+    </select>
+
+    <update id="clearInforMation"  parameterType="com.fh.entity.zxzq.ZxzqCommonBO" >
+       update zxzq_information set  securities=0  where memberid=#{memberid}
+    </update>
+    <!--*******************************************************定时奖金转入可提现************************************************************-->
+
+    <select id="queryZxzqRate"  resultType="com.fh.entity.zxzq.ZxzqRateBO" >
+        select  money  FROM zxzq_rate ORDER BY ctime DESC LIMIT 0,1
+    </select>
+
+
+
+
+
+
+    <!--zxzqJiangJinFaFang.setC(c); //hold剩余证券-->
+    <!--zxzqJiangJinFaFang.setD(d);  //扣除持有证券;-->
+    <!--zxzqJiangJinFaFang.setF(f); //生成可体现证券;-->
+    <!--zxzqJiangJinFaFang.setG(g); //剩余奖金-->
+
+
+
+    <!--奖金转可体现记录-->
+    <insert id="setDrawcashRecord" parameterType="com.fh.entity.zxzq.ZxzqJiangJinFaFang">
+         insert into   zxzq_drawcash_record  (memberid , status  ,time  ,welfare ,integration  ,securitiesnum)
+         VALUE (#{memberid} ,1 ,now() ,TRUNCATE((#{a}*0.1),2) ,TRUNCATE((#{a}*0.1),2) ,TRUNCATE(#{securities},2) )
+    </insert>
+    <!--奖金转可体现-->
+    <update id="setDrawcash" parameterType="com.fh.entity.zxzq.ZxzqJiangJinFaFang">
+          update zxzq_drawcash  a set a.securitiesnum = a.securitiesnum + TRUNCATE(#{securities},2)   where memberid=#{memberid}
+    </update>
+
+
+
+
+    <select id="queryBack" parameterType="com.fh.entity.zxzq.ZxzqJiangJinFaFang"  resultType="com.fh.entity.zxzq.ZxzqRecordBO">
+        select memberid ,sum(price) -sum(realprice)  as  price  from
+        (
+        select memberid, sum(price)  as  price ,sum(realprice) as realprice  from zxzq_record   where  memberid=#{memberid}
+        union all
+        select memberid ,0  as  price , sum(securities)  as  realprice  from zxzq_back   where  memberid=#{memberid}
+        ) c
+    </select>
+
+    <insert id="saveZxzqBack" parameterType="com.fh.entity.zxzq.ZxzqCommonBO">
+        insert into  zxzq_back  (memberid ,time ,securities) VALUES (#{memberid} ,now() ,#{money})
+    </insert>
+    <!--钱包记录表生成记录-->
+    <insert id="setInformationRecord" parameterType="com.fh.entity.zxzq.ZxzqJiangJinFaFang">
+         insert  into   zxzq_information_record (memberid , type, time, welfare, integration, securities)
+         VALUE
+         (#{memberid} ,1 ,now() ,TRUNCATE((#{a}*0.1),2) ,TRUNCATE((#{a}*0.1),2),TRUNCATE(#{securities},2) )
+    </insert>
+    <!--infomation生成-->
+    <update id="setInformation" parameterType="com.fh.entity.zxzq.ZxzqJiangJinFaFang">
+        update zxzq_information i set i.welfare = TRUNCATE(TRUNCATE((#{a}*0.1),2) + i.welfare,2), i.integration = TRUNCATE(TRUNCATE((#{a}*0.1),2) + i.integration,2) ,
+         securities = TRUNCATE(TRUNCATE(#{securities},2) + securities,2) , charitable_reward=TRUNCATE(TRUNCATE((#{a}*0.05),2) + charitable_reward,2)  ,
+          assigned=#{g}   where i.memberid = #{memberid}
+    </update>
+    <update id="setHoldingRecord" parameterType="com.fh.entity.zxzq.ZxzqJiangJinFaFang">
+       update  zxzq_holding  set securitiesnum=securitiesnum - #{a}  where memberid= #{memberid}
+    </update>
+    <update id="setHoldingRecord1" parameterType="com.fh.entity.zxzq.ZxzqJiangJinFaFang">
+        update  zxzq_holding  set securitiesnum= #{c}  where memberid= #{memberid}
+    </update>
+    <!--*******************************************************培育佣金和管理佣金************************************************************-->
+    <select id ="queryAllMember" resultType="com.fh.entity.zxzq.ZxzqAllMember">
+        select member_id,member_name,member_sn,network_id ,network_team from member where network_id is not NULL and securities_id is not NULL
+    </select>
+
+    <select id ="queryMemberAchi" parameterType="com.fh.entity.zxzq.ZxzqAllMember" resultType="com.fh.entity.zxzq.ZxzqMemberAchi">
+            select achievement,member_sn from zxzq_information as t3,(select t1.member_id,t1.member_sn,t1.securities_id
+            from member as t1,member as t2 where t1.network_id=t2.member_sn
+            and t2.member_sn=#{member_sn}) as t4 where t3.memberid=t4.member_id
+    </select>
+
+    <select id ="queryMemberAchi1" parameterType="com.fh.entity.zxzq.ZxzqAllMember" resultType="com.fh.entity.zxzq.ZxzqMemberAchi">
+     select member_id ,network_team  from member where network_id=#{member_sn}
+    </select>
+    <select id ="queryMemberAchi2" parameterType="com.fh.entity.zxzq.ZxzqMemberAchi" resultType="com.fh.entity.zxzq.ZxzqMemberAchi">
+      select IFNULL(sum(realprice),0)  as achievement from zxzq_record where memberid in (select member_id from member where network_team like CONCAT(#{network_team},'%') )
+    </select>
+
+
+    <!--已发放奖金-->
+    <select id ="queryFinshReward" parameterType="com.fh.entity.zxzq.ZxzqAllMember" resultType="com.fh.entity.zxzq.ZxzqSumReward">
+      select memberid , sum(rewardnum) as rewardnum from zxzq_reward where memberid=#{member_id} and invitelevel=4
+    </select>
+
+    <!--查询该人所获奖励等级-->
+    <select id ="queryRewardLeval" parameterType="com.fh.entity.zxzq.ZxzqAllMember"  resultType="com.fh.entity.zxzq.ZxzqRewardLevel">
+          select t4.member_id,t4.member_sn,t4.securities_id,(t3.t_bred+t3.t_bred_f) as bred,t4.member_name from zxzq_goods as t3,(select t1.member_id,t1.member_level,t2.securities_id,t2.member_name,t2.member_sn from zxzq_member_level as t1,member as t2 where t1.member_id=t2.member_id and t2.member_id=#{member_id}) as t4 where t3.id = t4.member_level order by bred DESC
+    </select>
+    <!--&lt;!&ndash;查询该人所获奖励等级&ndash;&gt;-->
+    <!--奖金记录相加-->
+    <update id="setInfromationReward" parameterType="com.fh.entity.zxzq.ZxzqReward">
+         update zxzq_information set assigned=assigned+#{rewardnum} where memberid=#{memberid}
+    </update>
+
+    <insert id="setInfromationRewardRecord" parameterType="com.fh.entity.zxzq.ZxzqReward">
+        insert into zxzq_reward(memberid,securitiesid,invitedid,invitelevel,rewardpoint,rewardnum,rewardtime) VALUES(#{memberid},'0',#{memberid},4,#{rewardpoint},#{rewardnum},NOW())
+    </insert>
+
+    <!--奖金记录相加-->
+    <update id="setInfromationRewardGL" parameterType="com.fh.entity.zxzq.ZxzqReward">
+        update zxzq_information set assigned=assigned+#{rewardnum} where memberid=#{memberid}
+    </update>
+
+    <insert id="setInfromationRewardRecordGL" parameterType="com.fh.entity.zxzq.ZxzqReward">
+        insert into zxzq_reward(memberid,securitiesid,invitedid,invitelevel,rewardpoint,rewardnum,rewardtime) VALUES(#{memberid},'1',#{memberid},#{invitelevel},#{rewardpoint},#{rewardnum},NOW())
+    </insert>
+
+
+    <select id="querythreeLevel" parameterType="com.fh.entity.zxzq.ZxzqMemberBo" resultType="com.fh.entity.zxzq.ZxzqMemberBo">
+        select * from member where  member_sn=(select securities_id from member where member_sn =#{member_sn})
+    </select>
+
+
+      <!--/**********************************************复投******************************************************/-->
+    <select id="queryFuTou"  parameterType="com.fh.entity.zxzq.ZxzqCommonBO"  resultType="com.fh.entity.zxzq.ZxzqRecordBO">
+        select  memberid  ,sum(price) - sum(realprice ) as  price  from zxzq_record  where  memberid=#{memberid}        group by  memberid
+    </select>
+
+    <select id="queryZxzqInformation"  parameterType="com.fh.entity.zxzq.ZxzqCommonBO"  resultType="com.fh.entity.zxzq.ZxzqInformationBO">
+         select * from zxzq_information where memberid=#{memberid}
+    </select>
+
+    <!--订单复投-->
+    <insert id="securitiesBackLevel"  parameterType="com.fh.entity.zxzq.ZxzqRecordBO">
+        insert into  zxzq_record  (memberid ,securitiesid,securities,securitiesnum,price,realprice,levered,otime ,remark)
+        VALUES (#{memberid},#{securitiesid} ,#{securities} ,#{securitiesnum} ,#{price},#{realprice} ,#{levered} , now() ,#{remark})
+    </insert>
+
+    <!--持有证券-->
+    <insert id="securitiesBackHold"  parameterType="com.fh.entity.zxzq.ZxzqRecordBO">
+        insert into  zxzq_holding  (memberid,securitiesid,securitiesnum)
+        VALUES (#{memberid},#{securitiesid} ,#{securitiesnum})
+    </insert>
+
+
+
+    <update id="fuTouInfromation" parameterType="com.fh.entity.zxzq.ZxzqRecordBO">
+        update zxzq_information  set  securities =securities - #{securities}  where  memberid= #{memberid}
+    </update>
+    <insert id="fuTouInfromationRecord" parameterType="com.fh.entity.zxzq.ZxzqRecordBO">
+        insert  into   zxzq_information_record (memberid , type, time, securities ,securitiesid)
+        VALUES (#{memberid} ,4 ,now() ,#{securities} ,#{securitiesid})
+    </insert>
+    <insert id="fuTouDrawcashRecord" parameterType="com.fh.entity.zxzq.ZxzqRecordBO">
+        insert into   zxzq_drawcash_record  (memberid , status  ,time   ,remark ,securitiesnum ,securitiesid)
+        VALUES (#{memberid} ,4 ,now() ,#{remark} ,#{securities} ,#{securitiesid})
+    </insert>
+    <update id="fuTouDrawcash" parameterType="com.fh.entity.zxzq.ZxzqRecordBO">
+        update zxzq_drawcash   set  securitiesnum =securitiesnum -  #{securities}   where memberid=#{memberid}
+    </update>
+
+    <select id="checkRecordRealpriceNew" parameterType="com.fh.entity.zxzq.ZxzqCommonBO" resultType="com.fh.entity.zxzq.ZxzqRecordBO">
+         select memberid , (sum(price) - sum(realprice)) as  price   from zxzq_record where  memberid = #{memberid}  GROUP BY memberid
+    </select>
+
+
+    <select id="queryMemberLevel" parameterType="com.fh.entity.zxzq.ZxzqCommonBO" resultType="com.fh.entity.zxzq.ZxzqMemberLevel">
+            select * from zxzq_member_level where member_id =#{memberid}
+    </select>
+
+  <!--重新计算zxzq_member_lever表-->
+   <update id="setZxzqMemberLevel" parameterType="com.fh.entity.zxzq.ZxzqMemberLevel">
+       update   zxzq_member_level   set  member_level =#{member_level},      member_realprice =#{member_realprice}    where member_id=#{member_id}
+   </update>
+
+
+    <select id="queryAchiOne" parameterType="com.fh.entity.zxzq.ZxzqMemberAchi" resultType="com.fh.entity.zxzq.ZxzqRealPrice">
+        select sum(t1.realprice) as realprice from zxzq_record as t1,member as t2 where t1.memberid=t2.member_id  and t2.member_sn=#{member_sn} GROUP BY t1.memberid
+    </select>
+
+
+    <!--可提现证券购买-->
+    <insert id="fuTouInfromationRecord7" parameterType="com.fh.entity.zxzq.ZxzqRecordBO">
+        insert  into   zxzq_information_record (memberid , type, time, securities ,securitiesid)
+        VALUES (#{memberid} ,7 ,now() ,#{securities} ,#{securitiesid})
+    </insert>
+
+    <insert id="fuTouDrawcashRecord7" parameterType="com.fh.entity.zxzq.ZxzqRecordBO">
+        insert into   zxzq_drawcash_record  (memberid , status  ,time   ,remark ,securitiesnum ,securitiesid)
+        VALUES (#{memberid} ,7 ,now() ,#{remark} ,#{securities} ,#{securitiesid})
+    </insert>
+
+    <!--查询孝币-->
+    <select id="queryZxzqXbWallet" parameterType="com.fh.entity.zxzq.ZxzqCommonBO" resultType="com.fh.entity.zxzq.ZxzqXbWalletBo">
+       select * from zxzq_xb_wallet  where  member_id=#{memberid}
+    </select>
+
+    <insert id="insertZxzqXbLog"  parameterType="com.fh.entity.zxzq.ZxzqRecordBO" >
+        insert INTO zxzq_xb_log (type , member_id ,xb ,time ,f_member_id ,s_member_id) VALUE (4 ,#{memberid} ,#{securities}, now() ,-1 ,-1)
+    </insert>
+
+    <update id="updateZxzqXbWallet"  parameterType="com.fh.entity.zxzq.ZxzqRecordBO">
+           update  zxzq_xb_wallet  set  xb=xb - #{securities}   where member_id=#{memberid}
+    </update>
+
+
+
+    <!--查询需结算人员奖金等信息-->
+    <select id="queryJiangJin" resultType="com.fh.entity.zxzq.ZxzqJiangJinBO">
+           select a.memberid ,a.securitiesnum ,b.assigned ,c.securities  from  zxzq_holding  a
+										LEFT JOIN zxzq_information b  on a.memberid=b.memberid
+                    left join view_zq  c on a.memberid=c.memberid  where b.assigned>0
+    </select>
+<!--重置密码-->
+    <!--<update id="modifyPassWordByMembername" >-->
+    <!--校验邀请人和网络上级是否在一条线上-->
+    <!--通过member_sn查出邀请人的网络位置开始-->
+    <select id="queryNetWorkidByInviter" parameterType="com.fh.entity.zxzq.DoRegisterVo" resultType="com.fh.entity.bo.UserInfoBO">
+        select network_team from member where member_sn=#{inviter}
+    </select>
+    <!--通过member_sn查出网络上级的网络位置-->
+    <select id="queryNetWorkidByNetwork_id" parameterType="com.fh.entity.zxzq.DoRegisterVo" resultType="com.fh.entity.bo.UserInfoBO">
+        select network_team from member where member_sn=#{network_id}
+    </select>
+    <!--通过member_sn查出邀请人的网络位置结束-->
+<!--通过membersn查询用户信息-->
+    <select id="queryMemberidByMembersn" parameterType="com.fh.entity.zxzq.DoRegisterVo" resultType="com.fh.entity.bo.UserInfoBO">
+        select * from member where member_sn=#{network_id}
+    </select>
+<!--查询用户是否有下单-->
+    <select id="queryOrderSecuritiesnum" parameterType="com.fh.entity.bo.UserInfoBO" resultType="com.fh.entity.zxzq.ZxzqRecordBO">
+        select * from zxzq_record where memberid=#{member_id}
+    </select>
+
+
+    <insert id="insertIntoRecord" parameterType="com.fh.entity.zxzq.ZxzqRecordBO" >
+INSERT INTO zxzq_record (memberid,securitiesid,securities,securitiesnum,price,realprice,levered,otime,remark)VALUES(#{memberid},#{securitiesid},1000.00,2000.00,1000.00,0.00,2.00,NOW(),'特殊情况下实际花费金额0.00')
+    </insert>
+    <insert id="insertIntoHolding" parameterType="com.fh.entity.zxzq.ZxzqRecordBO" >
+        INSERT INTO zxzq_holding (memberid,securitiesid,securitiesnum)VALUES(#{memberid},#{securitiesid},2000.00)
+    </insert>
+
+<update id="modifyNoticeStatus" parameterType="com.fh.entity.zxzq.ZxzqMemberBo">
+    update member SET notice_status='1' where member_id=#{member_id}
+</update>
+
+    <delete id="deleteZxzqReward">
+        delete  from  zxzq_reward  where rewardnum=0
+    </delete>
+
+
+   <select id="queryAutomatic" resultType="com.fh.entity.zxzq.ZxzqInformationBO">
+       select * from zxzq_information  where automatic=1  and securities >10
+   </select>
+    <select id="queryAutomatic1" parameterType="com.fh.entity.zxzq.ZxzqInformationBO" resultType="com.fh.entity.zxzq.ZxzqRecordBO">
+       select memberid , sum(price) as price ,sum(realprice) as  realprice from zxzq_record  where memberid=#{memberid}  GROUP BY memberid
+    </select>
+
+    <update id="confirmAutomatic" parameterType="com.fh.entity.zxzq.ZxzqCommonBO">
+        update zxzq_information   set automatic =#{automatic}  where memberid=#{memberid}
+    </update>
+<!-- 查询老用户数据-->
+    <select id="queryOldMember"  resultType="com.fh.entity.zxzq.ZxzqMemberBo">
+    select * from member where network_team like (select concat(network_team,'%') as network_team from member where member_name='yw100011')
+
+</select>
+    <select id="queryNewMember"  resultType="com.fh.entity.zxzq.ZxzqMemberBo">
+        select * from member where member_id > 7234 and member_id &lt; 7293
+    </select>
+
+    <update id="updateMemberNetWorkId" parameterType="com.fh.entity.zxzq.ZxzqMemberBo">
+        update member set network_id=#{network_id} where member_id=#{member_id}
+    </update>
+    <update id="updateMemberSecuritiesId" parameterType="com.fh.entity.zxzq.ZxzqMemberBo">
+        update member set securities_id=#{securities_id} where member_id=#{member_id}
+    </update>
+
+    <select id="queryRecordByOldID"  parameterType="com.fh.entity.zxzq.ZxzqMemberBo" resultType="com.fh.entity.zxzq.ZxzqRecordBO">
+        select * from zxzq_record where memberid=#{member_id}
+    </select>
+
+    <insert id="insertNewRecord" parameterType="com.fh.entity.zxzq.ZxzqRecordBO" >
+        INSERT INTO zxzq_record (memberid,securitiesid,securities,status,securitiesnum,price,realprice,levered,otime,remark)VALUES(#{memberid},#{securitiesid},#{securities},1,#{securitiesnum},#{price},#{realprice},#{levered},#{otime},#{remark})
+    </insert>
+
+    <select id="queryHoldingByOldID"  parameterType="com.fh.entity.zxzq.ZxzqMemberBo" resultType="com.fh.entity.zxzq.ZxzqHoldingBO">
+        select * from zxzq_holding where memberid=#{member_id}
+    </select>
+
+    <insert id="saveNewHolding"  parameterType="com.fh.entity.zxzq.ZxzqHoldingBO">
+        insert into  zxzq_holding  (memberid,securitiesid,securitiesnum)
+        VALUES (#{memberid},#{securitiesid} ,#{securitiesnum})
+    </insert>
+
+    <delete id="deleteAllRecord" parameterType="com.fh.entity.zxzq.ZxzqMemberBo">
+        delete from zxzq_record where memberid=#{member_id}
+    </delete>
+
+    <select id="queryOldMemberLevel"  parameterType="com.fh.entity.zxzq.ZxzqMemberBo" resultType="com.fh.entity.zxzq.ZxzqMemberLevel">
+        select * from zxzq_member_level where member_id=#{member_id}
+    </select>
+
+    <insert id="saveNewMemberLevel"  parameterType="com.fh.entity.zxzq.ZxzqMemberLevel">
+        insert into  zxzq_member_level  (member_id,member_sn,member_level,member_realprice)
+        VALUES (#{member_id},#{member_sn} ,#{member_level},#{member_realprice})
+    </insert>
+
+    <select id="queryOldRewardByMember"  parameterType="com.fh.entity.zxzq.ZxzqMemberBo" resultType="com.fh.entity.zxzq.ZxzqReward">
+        select * from zxzq_reward where memberid=#{member_id}
+    </select>
+
+    <insert id="saveNewRewardByOld"  parameterType="com.fh.entity.zxzq.ZxzqReward">
+        insert into  zxzq_reward  (memberid,securitiesid,invitedid,invitelevel,rewardpoint,rewardnum,rewardtime)
+        VALUES (#{memberid},#{securitiesid} ,#{invitedid},#{invitelevel},#{rewardpoint},#{rewardnum},#{rewardtime})
+    </insert>
+
+    <select id="queryOldDrawCashRecordByMember"  parameterType="com.fh.entity.zxzq.ZxzqMemberBo" resultType="com.fh.entity.zxzq.ZxzqDrawCashBO">
+        select * from zxzq_drawcash_record where memberid=#{member_id}
+    </select>
+
+
+    <insert id="saveNewDrawCashRecordByOld"  parameterType="com.fh.entity.zxzq.ZxzqDrawCashBO">
+               INSERT into zxzq_drawcash_record (memberid,securitiesnum,releasenum,status,securitiesnum_after,time,securitiesid,welfare,integration,remark) VALUES
+               (#{memberid},#{securitiesnum},#{releasenum},#{status},#{securitiesnum_after},#{time},#{securitiesid},#{welfare},#{integration},#{remark})
+    </insert>
+
+    <select id="queryOldInformationByMember"  parameterType="com.fh.entity.zxzq.ZxzqMemberBo" resultType="com.fh.entity.zxzq.ZxzqInformationBO">
+        select * from zxzq_information
+        where memberid=#{member_id}
+    </select>
+
+
+    <insert id="saveNewInformationByOld"  parameterType="com.fh.entity.zxzq.ZxzqInformationBO">
+        INSERT into zxzq_information (memberid,welfare,integration,securities,achievement,assigned,status,charitable_reward) VALUES
+        (#{memberid},#{welfare},#{integration},#{securities},#{achievement},#{assigned},#{status},#{charitable_reward})
+    </insert>
+
+    <select id="queryOldInformationRecordByMember"  parameterType="com.fh.entity.zxzq.ZxzqMemberBo" resultType="com.fh.entity.zxzq.ZxzqInformationBO">
+        select * from zxzq_information_record
+        where memberid=#{member_id}
+    </select>
+
+
+    <insert id="saveNewInformationRecordByOld"  parameterType="com.fh.entity.zxzq.ZxzqInformationBO">
+        INSERT into zxzq_information (memberid,securitiesid,type,time,welfare,integration,securities,achievement,assigned) VALUES
+        (#{memberid},#{securitiesid},#{type},#{time},#{welfare},#{integration},#{securities},#{achievement},#{assigned})
+    </insert>
+
+    <select id="queryOldWalletByMember"  parameterType="com.fh.entity.zxzq.ZxzqMemberBo" resultType="com.fh.entity.zxzq.ZxzqWalletBo">
+        select * from zxzq_wallet
+        where memberid=#{member_id}
+    </select>
+
+
+    <insert id="saveNewWalletByOld"  parameterType="com.fh.entity.zxzq.ZxzqWalletBo">
+        INSERT into zxzq_wallet (memberid,membername,money,frozen) VALUES
+        (#{memberid},#{membername},#{money},#{frozen})
+    </insert>
+
+    <select id="queryOldWalletRecordByMember"  parameterType="com.fh.entity.zxzq.ZxzqMemberBo" resultType="com.fh.entity.zxzq.ZxzqWalletBo">
+    select * from zxzq_wallet_record where memberid=#{member_id}
+</select>
+
+
+    <insert id="saveNewWalletRecordByOld"  parameterType="com.fh.entity.zxzq.ZxzqWalletBo">
+        INSERT into zxzq_wallet_record (memberid,paymoney,paypmoney,payrmoney,paytime,payid,paytype,paysn,paystatus) VALUES
+        (#{memberid},#{paymoney},#{paypmoney},#{payrmoney},#{paytime},#{payid},#{paytype},#{paysn},#{paystatus})
+    </insert>
+
+
+    <select id="queryOldXBByMember"  parameterType="com.fh.entity.zxzq.ZxzqMemberBo" resultType="com.fh.entity.zxzq.ZxzqXbWalletBo">
+        select * from zxzq_xb_wallet where member_id=#{member_id}
+    </select>
+
+
+    <insert id="saveNewXBByOld"  parameterType="com.fh.entity.zxzq.ZxzqXbWalletBo">
+        INSERT into zxzq_xb_wallet (member_id,xb,etime) VALUES
+        (#{memberid},#{xb},#{etime})
+    </insert>
+
+    <select id="queryOldDrawCashByMember"  parameterType="com.fh.entity.zxzq.ZxzqMemberBo" resultType="com.fh.entity.zxzq.ZxzqDrawCashBO">
+        select * from zxzq_drawcash where memberid=#{member_id}
+        </select>
+
+        <insert id="saveNewDrawCashByOld"  parameterType="com.fh.entity.zxzq.ZxzqDrawCashBO">
+        INSERT into zxzq_drawcash (memberid,securitiesnum,releasenum,status,securitiesnum_after,time,securitiesid,welfare,integration,remark) VALUES
+        (#{member_id},#{securitiesnum},#{releasenum},#{status},#{securitiesnum_after},#{time},#{securitiesid},#{welfare},#{integration},#{remark})
+        </insert>
+
+
+
+
+
+
+    <!--<insert id="insertExtract"  parameterType="com.fh.entity.zxzq.ZxzqExtract">-->
+        <!--INSERT into zxzq_extract (memberid,oddnumbers,cash,frozen,rate,status,ctime,remark) VALUES-->
+        <!--(#{memberid},#{oddnumbers},#{cash},#{frozen},#{rate},#{status},#{ctime},#{remark})-->
+    <!--</insert>-->
+
+    <!-- 提交提现申请-->
+    <insert id="insertExtract"  parameterType="com.fh.entity.zxzq.ZxzqExtract">
+        INSERT into zxzq_extract (memberid,oddnumbers,cash,frozen,rate,status,ctime,remark,createaddress) VALUES
+        (#{memberid},#{oddnumbers},#{cash},#{frozen},#{rate},0,NOW(),'提现成功',#{createAddress})
+    </insert>
+
+    <update id="updateExtract" parameterType="com.fh.entity.zxzq.ZxzqExtract">
+        update zxzq_extract set status=1,modifyaddress=#{modifyAddress},mtime=NOW() where oddnumbers=#{oddnumbers} and memberid=#{memberid}
+    </update>
+
+    <update id="deductDrawcash" parameterType="com.fh.entity.zxzq.ZxzqExtract">
+        update zxzq_drawcash set securitiesnum=securitiesnum-#{frozen} where memberid=#{memberid}
+    </update>
+
+    <update id="deductInformation" parameterType="com.fh.entity.zxzq.ZxzqExtract">
+        update zxzq_information set securities=securities-#{frozen} where memberid=#{memberid}
+    </update>
+
+    <update id="cancelDrawcash" parameterType="com.fh.entity.zxzq.ZxzqExtract">
+        update zxzq_drawcash set securitiesnum=securitiesnum+#{frozen} where memberid=#{memberid}
+    </update>
+
+    <update id="cancelInformation" parameterType="com.fh.entity.zxzq.ZxzqExtract">
+        update zxzq_information set securities=securities+#{frozen} where memberid=#{memberid}
+    </update>
+
+    <update id="deleteExtract" parameterType="com.fh.entity.zxzq.ZxzqExtract">
+        update zxzq_extract set isdelete=1 where oddnumbers=#{oddnumbers} and memberid=#{memberid}
+    </update>
+
+    <select id="queryExtractById"  parameterType="com.fh.entity.zxzq.ZxzqExtract" resultType="com.fh.entity.zxzq.ZxzqExtract">
+        select * from zxzq_extract where memberid=#{memberid} and oddnumbers=#{oddnumbers}
+    </select>
+<delete id="deleteExtractByOddnumbers" parameterType="com.fh.entity.zxzq.ZxzqExtract">
+    delete from zxzq_extract where oddnumbers=#{oddnumbers} and memberid=#{memberid}
+        </delete>
+    <select id="queryNetwork_team" parameterType="com.fh.entity.zxzq.ZxzqMemberBo"  resultType="com.fh.entity.zxzq.ZxzqMemberBo">
+        select member_name,network_team from member where member_name=#{member_name}
+    </select>
+    <select id="queryYejiByNetwork_team" parameterType="com.fh.entity.zxzq.ZxzqMemberBo" resultType="java.math.BigDecimal">
+    select sum(realprice) from zxzq_record where memberid in(select member_id from member where network_team like (#{network_team})) and otime &gt; #{startDate} and otime &lt; #{endDate} and (remark is null or remark !='复投')
+</select>
+
+    <select id="queryAllYeji" parameterType="com.fh.entity.zxzq.ZxzqMemberBo" resultType="java.math.BigDecimal">
+        select sum(realprice) from zxzq_record where  otime &gt; #{startDate} and otime &lt; #{endDate} and (remark is null or remark !='复投')
+    </select>
+
+     <!--查询用户是否是4月1号以后注册并且等级是2的会员-->
+    <select id="queryMemberIsNew" parameterType="com.fh.entity.zxzq.ZxzqMemberBo" resultType="com.fh.entity.zxzq.ZxzqMemberBo">
+        select m.member_id,m.member_name from member m LEFT JOIN zxzq_member_level l on m.member_id=l.member_id where FROM_UNIXTIME(m.member_time)>'2017-03-27 00:00:00' and l.member_level=2 and m.member_id=#{member_id}
+    </select>
+
+
+    <select id="queryByRecordBONew" parameterType="com.fh.entity.zxzq.ZxzqCommonBO"  resultType="com.fh.entity.zxzq.ZxzqRecordBO">
+          select memberid, sum(securities) as  securities  from zxzq_record where memberid=#{memberid};
+    </select>
+
+    <select id="queryGoodsForId" parameterType="com.fh.entity.zxzq.ZxzqCommonBO" resultType="com.fh.entity.zxzq.ZxzqGoodsBo">
+        select * from zxzq_goods where id=#{id}
+    </select>
+
+
+    <select id="queryWalletAddress" parameterType="com.fh.entity.zxzq.ZxzqRecordVo" resultType="java.lang.String">
+        select address from zxzq_wallet_address where member_id=#{memberid}
+    </select>
+
+
+
+  <insert id="zxzqYjBo" parameterType="com.fh.entity.zxzq.ZxzqYjBo">
+      insert into yj (member_id,member_name,member_sn,bigyj,smallyj) VALUES (#{member_id},#{member_name},#{member_sn},#{bigyj},#{smallyj})
+  </insert>
+
+
+</mapper>

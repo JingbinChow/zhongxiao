@@ -1,0 +1,579 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="Treatment">
+       <select id="QueryMember" parameterType="com.fh.entity.vo.QueryDoctorVo" resultType="com.fh.entity.bo.UserInfoBO">
+           select m.member_id,m.member_name,m.member_mobile,m.member_truename from member as m left join mb_user_token as t on m.member_id=t.member_id where token=#{token}
+       </select>
+
+    <select id="QueryDepartment" parameterType="com.fh.entity.vo.QueryDoctorVo" resultType="java.lang.String">
+        select department from department where id=#{did}
+    </select>
+    <select id="QueryDoctors" parameterType="com.fh.entity.vo.QueryDoctorVo" resultType="com.fh.entity.bo.DoctorBo">
+        SELECT d.id,d.department,d.doctor_name,d.level,d.affiliated_hospital,d.price,d.clinic,d.thumb FROM doctor AS d LEFT JOIN department AS dp ON d.department=dp.id LEFT JOIN area AS a ON d.area=a.area_id where 1=1
+        <if test="area_id!=0">
+            and d.area=#{area_id}
+        </if>
+        <if test="department!=null and department!=''">
+            and d.department=#{department}
+        </if>
+        <if test="doctor_name!='' and doctor_name!=null">
+            and d.doctor_name=#{doctor_name}
+        </if>
+        <if test="order==1">
+            order by price ASC
+    </if>
+        <if test="order==2">
+            order by price desc
+        </if>
+        <if test="pageSize!=0">
+            limit #{pageIndex},#{pageSize}
+        </if>
+    </select>
+    <!--详情-->
+    <select id="queryDoctorById" parameterType="com.fh.entity.vo.QueryDoctorVo" resultType="com.fh.entity.bo.DoctorBo">
+        select * from doctor as d  where d.id = #{id}
+    </select>
+
+    <!--分页查询交流记录-->
+    <select id="queryCommunicate" parameterType="com.fh.entity.vo.QueryCommunicateVO" resultType="com.fh.entity.vo.CommunicateRecordVo">
+
+
+
+        select * from communicate_record where  member_id =  #{member_id} and isdelete =0 order by create_time desc
+
+        <if test="pageSize!=0">
+            limit #{pageIndex},#{pageSize}
+        </if>
+    </select>
+    <!--删除订单（修改isdelete字段的状态）-->
+    <update id="modifyIsDelete" parameterType="com.fh.entity.vo.QueryCommunicateVO">
+        update communicate_record set  isdelete = 1  where communicate_id=#{communicate_id}
+    </update>
+
+
+    <!--添加交流记录-->
+    <insert id="addCommunicateRecord" parameterType="com.fh.entity.vo.CommunicateRecordVo">
+      INSERT into communicate_record (communicate_id ,doctor_id,member_id,member_name,member_truename,doctor_name,create_time,status,money,reason,bespoke_time) VALUES (#{communicate_id},#{doctor_id},#{member_id},#{member_name},#{member_truename},#{doctor_name},#{create_time},#{status},#{money},#{reason},#{bespoke_time})
+    </insert>
+
+    <!--获取预约信息-->
+    <select id="findCommunicateRecord" parameterType="com.fh.entity.vo.CommunicateRecordVo" resultType="com.fh.entity.vo.CommunicateRecordVo">
+
+        select * from communicate_record where  doctor_id =#{doctor_id} and member_id= #{member_id}  and  create_time=#{create_time}  order by create_time  desc LIMIT 1
+
+    </select>
+
+
+
+    <!--评论等级和评论内容-->
+    <update id="modifyCommunicate" parameterType="com.fh.entity.vo.ModifyCommunicateVO">
+         update communicate_record set  score =#{score},comment=#{comment}  where communicate_id=#{communicate_id}
+    </update>
+
+    <!--分页查询客服电话等数据记录-->
+    <select id="getPhone" parameterType="com.fh.entity.vo.QueryCommunicateVO" resultType="com.fh.entity.vo.QueryCommunicateVO">
+        select member_truename,doctor_name,reason,bespoke_time from communicate_record where  member_id =  #{member_id}
+        <!--<if test="pageSize!=0">-->
+            <!--limit #{pageIndex},#{pageSize}-->
+        <!--</if>-->
+    </select>
+
+    <!--支付订单列表-->
+    <insert id="addAlipayTransaction" parameterType="com.fh.entity.vo.AlipayTransactionVo">
+        INSERT into alipay_transaction (notify_time,notify_type,notify_id,app_id,trade_no,out_trade_no,out_biz_no,buyer_id,buyer_logon_id,seller_id,seller_email,trade_status,total_amount,receipt_amount,invoice_amount,buyer_pay_amount,point_amount,refund_fee,subject,body,gmt_create,gmt_payment,gmt_refund,gmt_close,fund_bill_list) VALUES (#{notify_time},#{notify_type},#{notify_id},#{app_id},#{trade_no},#{out_trade_no},#{out_biz_no},#{buyer_id},#{buyer_logon_id},#{seller_id},#{seller_email},#{trade_status},#{total_amount},#{receipt_amount},#{invoice_amount},#{buyer_pay_amount},#{point_amount},#{refund_fee},#{subject},#{body},#{gmt_create},#{gmt_payment},#{gmt_refund},#{gmt_close},#{fund_bill_list})
+    </insert>
+
+    <select id="findCommunicateRecordById" parameterType="java.lang.String" resultType="com.fh.entity.vo.CommunicateRecordVo">
+        select * from communicate_record  as  ce LEFT  join  doctor d  on ce.doctor_id = d.id  where communicate_id=#{communicate_id}
+    </select>
+
+    <update id="updateTrade_no" parameterType="com.fh.entity.vo.CommunicateRecordVo">
+        update communicate_record SET  trade_no=#{trade_no}, status='3',complete='0' where communicate_id=#{communicate_id}
+            </update>
+
+
+    <!--获取科室信息-->
+    <select id="queryDepartment"  resultType="com.fh.entity.vo.DepartmentVo">
+        select * from department
+    </select>
+
+    <!--保存支付数据-->
+    <insert id="saveAlipayResult"  parameterType ="com.fh.entity.vo.AlipayResultVo">
+       INSERT  INTO  alipay_transaction (out_trade_no,trade_no,app_id,total_amount,seller_id,msg,code,is_success) VALUES (#{out_trade_no},#{trade_no},#{app_id},#{total_amount},#{seller_id},#{msg},#{code},#{is_success})
+    </insert>
+    <!--查询已支付记录-->
+    <select id="queryPayRecord" parameterType="com.fh.entity.vo.AlipayResultVo"  resultType="com.fh.entity.vo.CommunicateRecordVo">
+         select * from communicate_record  where communicate_id=#{out_trade_no} and complete='0' and status='3'
+    </select>
+    <!--&lt;!&ndash;支付成功之后的订单详情&ndash;&gt;-->
+    <!--<select id="QueryMember" parameterType="com.fh.entity.vo.AlipayTransactionVo" resultType="com.fh.entity.bo.UserInfoBO">-->
+           <!--select m.member_id,m.member_name,m.member_mobile,m.member_truename from member as m left join mb_user_token as t on m.member_id=t.member_id where token=#{token}-->
+    <!--</select>-->
+
+
+
+
+
+
+
+
+
+
+
+
+    <!--*********************************************************************中孝医生*********************************************************************-->
+
+
+    <!--验证token-->
+    <select id="checkToken" parameterType="java.lang.String" resultType="com.fh.entity.bo.UserInfoBO">
+        select * from member where member_id = (select member_id from mb_user_token where token =  #{token})
+    </select>
+
+    <!--查询该科室下，热度最高的4位医生-->
+    <select id="queryDoctorsTopFourOrdered" parameterType="com.fh.entity.zxys.ZxysOfficeVO" resultType="com.fh.entity.zxys.ZxysDoctorBO">
+        select * from zxys_authentication a left join member u on a.doctor_id = u.member_id where 1 = 1
+        <if test='officeName != null and officeName != "" and officeName != "全科"'>
+            and a.office = #{officeName}
+        </if>
+         and status = 2 order by reception_num desc limit 4
+    </select>
+
+    <!--查询该科室下的医生，按浏览量排序-->
+    <select id="queryDoctorsOrdered" parameterType="com.fh.entity.zxys.ZxysOfficeVO" resultType="com.fh.entity.zxys.ZxysDoctorBO">
+        select * from zxys_authentication a LEFT JOIN member u on a.doctor_id = u.member_id
+        <if test='orderType != null and orderType != "" and orderType == "回复速度最快"'>
+            LEFT JOIN zxys_message m on m.from_id = a.doctor_id
+        </if>
+        <where>
+            <if test='officeName != null and officeName != "" and officeName != "全部科室"'>
+                a.office like '%${officeName}%'
+            </if>
+            <if test='area != null and area != "" and area != "全部地区"'>
+                and a.area like '%${area}%'
+            </if>
+
+            /*咨询方式*/
+            <if test='consult != null and consult != "" and consult == "图文咨询"'>
+                and a.picture_text_consult != 0
+            </if>
+            <if test='consult != null and consult != "" and consult == "电话咨询"'>
+                and a.mobile_consult != 0
+            </if>
+            <if test='consult != null and consult != "" and consult == "私人医生"'>
+                and a.private_doctor_consult != 0
+            </if>
+            <if test='consult != null and consult != "" and consult == "预约就诊"'>
+                and a.appointment_consult != 0
+            </if>
+            <if test='consult != null and consult != "" and consult == "视频咨询"'>
+                and a.video_consult != 0
+            </if>
+            <if test='consult != null and consult != "" and consult == "院后指导"'>
+                and a.hospital_post_consult != 0
+            </if>
+
+            /*排序*/
+            <if test='orderType != null and orderType != "" and orderType == "排序"'>
+
+            </if>
+            <if test='orderType != null and orderType != "" and orderType == "智能排序"'>
+                order by reception_num desc
+            </if>
+            <if test='orderType != null and orderType != "" and orderType == "评价最高"'>
+                order by three_star_num desc
+            </if>
+            <if test='orderType != null and orderType != "" and orderType == "回复速度最快"'>
+                group by m.from_id  order by avg(send_time - receive_time)
+            </if>
+            <if test='orderType != null and orderType != "" and orderType == "价格由低到高"'>
+                order by min_price
+            </if>
+            <if test='orderType != null and orderType != "" and orderType == "价格由高到低"'>
+                order by min_price desc
+            </if>
+        </where>
+    </select>
+
+    <!--不区分科室，查询所有医生，按照接诊量排序，取前四-->
+    <select id="queryAllDoctorsTopFourOrdered" resultType="com.fh.entity.zxys.ZxysDoctorBO">
+        select * from zxys_authentication a left join member u on a.doctor_id = u.member_id order by reception_num desc limit 4
+    </select>
+
+    <!--不区分科室，查询所有医生，按照接诊量排序-->
+    <select id="queryAllDoctorsOrdered" resultType="com.fh.entity.zxys.ZxysDoctorBO">
+        select * from zxys_authentication a left join member u on a.doctor_id = u.member_id order by reception_num desc
+    </select>
+
+    <!--通过officeid查询科室-->
+    <select id="queryOfficeById" parameterType="com.fh.entity.zxys.ZxysOfficeVO" resultType="java.lang.String" >
+        select office_name from zxys_office where office_name = #{officeName}
+    </select>
+
+    <select id="queryAllOfficeOrderRecptionNum" resultType="com.fh.entity.zxys.ZxysOfficeBO">
+        select * from zxys_office o LEFT JOIN zxys_authentication a on o.office_name = a.office group  by a.office order by a.reception_num desc
+    </select>
+
+    <!--科室列表-->
+    <select id="queryAllOffice" resultType="com.fh.entity.zxys.ZxysOfficeBO">
+       select * from zxys_office where office_parentid = 0
+    </select>
+
+    <!--获取对话列表消息-->
+    <select id="queryZxysMessage" parameterType="com.fh.entity.zxys.ZxysMessageVo" resultType="com.fh.entity.zxys.ZxysMessageVo" >
+        select * from zxys_message where   is_open=0 AND session_id= #{session_id}  ORDER BY send_time
+    </select>
+    <!--获取数据的总条数-->
+    <select id="queryDoctorsCount" parameterType="com.fh.entity.zxys.ZxysDoctorPageVO" resultType="int" >
+        select count(1) from zxys_authentication a LEFT JOIN member u on a.doctor_id = u.member_id
+        <if test='orderType != null and orderType != "" and orderType == "回复速度最快"'>
+            LEFT JOIN zxys_message m on m.from_id = a.doctor_id
+        </if>
+        <where>
+            <if test='officeName != null and officeName != "" and officeName != "全部科室"'>
+                a.office like '%${officeName}%'
+            </if>
+            <if test='area != null and area != "" and area != "全部地区"'>
+                and a.area like '%${area}%'
+            </if>
+
+            /*咨询方式*/
+            <if test='consult != null and consult != "" and consult == "图文咨询"'>
+                and a.picture_text_consult != 0
+            </if>
+            <if test='consult != null and consult != "" and consult == "电话咨询"'>
+                and a.mobile_consult != 0
+            </if>
+            <if test='consult != null and consult != "" and consult == "私人医生"'>
+                and a.private_doctor_consult != 0
+            </if>
+            <if test='consult != null and consult != "" and consult == "预约就诊"'>
+                and a.appointment_consult != 0
+            </if>
+            <if test='consult != null and consult != "" and consult == "视频咨询"'>
+                and a.video_consult != 0
+            </if>
+            <if test='consult != null and consult != "" and consult == "院后指导"'>
+                and a.hospital_post_consult != 0
+            </if>
+
+            /*排序*/
+            <if test='orderType != null and orderType != "" and orderType == "排序"'>
+
+            </if>
+            <if test='orderType != null and orderType != "" and orderType == "智能排序"'>
+                order by reception_num desc
+            </if>
+            <if test='orderType != null and orderType != "" and orderType == "评价最高"'>
+                order by three_star_num desc
+            </if>
+            <if test='orderType != null and orderType != "" and orderType == "回复速度最快"'>
+                group by m.from_id  order by avg(send_time - receive_time)
+            </if>
+            <if test='orderType != null and orderType != "" and orderType == "价格由低到高"'>
+                order by min_price
+            </if>
+            <if test='orderType != null and orderType != "" and orderType == "价格由高到低"'>
+                order by min_price desc
+            </if>
+        </where>
+    </select>
+
+    <!--分页显示数据-->
+    <select id="queryDoctorsOrderedByPage" parameterType="com.fh.entity.zxys.ZxysDoctorPageVO" resultType="com.fh.entity.zxys.ZxysDoctorBO" >
+        select * from zxys_authentication a LEFT JOIN member u on a.doctor_id = u.member_id
+        <if test='orderType != null and orderType != "" and orderType == "回复速度最快"'>
+            LEFT JOIN zxys_message m on m.from_id = a.doctor_id
+        </if>
+        <where>
+            <if test='officeName != null and officeName != "" and officeName != "全部科室"'>
+                a.office like '%${officeName}%'
+            </if>
+            <if test='area != null and area != "" and area != "全部地区"'>
+                and a.area like '%${area}%'
+            </if>
+
+            /*咨询方式*/
+            <if test='consult != null and consult != "" and consult == "图文咨询"'>
+                and a.picture_text_consult != 0
+            </if>
+            <if test='consult != null and consult != "" and consult == "电话咨询"'>
+                and a.mobile_consult != 0
+            </if>
+            <if test='consult != null and consult != "" and consult == "私人医生"'>
+                and a.private_doctor_consult != 0
+            </if>
+            <if test='consult != null and consult != "" and consult == "预约就诊"'>
+                and a.appointment_consult != 0
+            </if>
+            <if test='consult != null and consult != "" and consult == "视频咨询"'>
+                and a.video_consult != 0
+            </if>
+            <if test='consult != null and consult != "" and consult == "院后指导"'>
+                and a.hospital_post_consult != 0
+            </if>
+
+            /*排序*/
+            <if test='orderType != null and orderType != "" and orderType == "排序"'>
+
+            </if>
+            <if test='orderType != null and orderType != "" and orderType == "智能排序"'>
+                order by reception_num desc
+            </if>
+            <if test='orderType != null and orderType != "" and orderType == "评价最高"'>
+                order by three_star_num desc
+            </if>
+            <if test='orderType != null and orderType != "" and orderType == "回复速度最快"'>
+                group by m.from_id  order by avg(send_time - receive_time)
+            </if>
+            <if test='orderType != null and orderType != "" and orderType == "价格由低到高"'>
+                order by min_price
+            </if>
+            <if test='orderType != null and orderType != "" and orderType == "价格由高到低"'>
+                order by min_price desc
+            </if>
+            limit #{startIndex}, #{pageSize}
+        </where>
+    </select>
+
+
+    <!--通过token查询用户-->
+    <select id="queryMemberByToken" parameterType="com.fh.entity.vo.TokenVo" resultType="com.fh.entity.bo.UserInfoBO">
+        select * form  mb_user_token where token = #{token}
+    </select>
+
+    <!--================================================获取评价开始============================================================-->
+
+    <!--预约医生获取医生评价-->
+    <select id="queryCommentContent" parameterType="java.lang.Integer" resultType="com.fh.entity.zxys.ZxysCommentContentBO">
+        select * from zxys_record where doctor_id = #{doctorId} order by create_time DESC limit 5
+    </select>
+
+    <!--获取评论内容中的评论标签-->
+    <select id="queryVariableValue" parameterType="java.lang.Integer" resultType="com.fh.entity.zxys.ZxysVariableBO">
+        select * from zxys_variable where id = #{id}
+    </select>
+
+    <!--预约医生获取医生评价总数-->
+    <select id="queryCommentSum" parameterType="java.lang.Integer" resultType="com.fh.entity.zxys.ZxysCommentContentBO">
+        select * from zxys_record where doctor_id = #{doctorId}
+    </select>
+
+    <!--预约医生获取全部医生评价-->
+    <select id="queryAllComment" parameterType="com.fh.entity.zxys.ZxysCommentContentVO" resultType="com.fh.entity.zxys.ZxysCommentContentBO">
+        select * from zxys_record where doctor_id=#{doctorId} order by create_time desc
+         <if test="pageSize !=0 and pageSize!=null and pageIndex!=null">
+             limit #{pageIndex} , #{pageSize}
+         </if>
+
+    </select>
+
+    <!--================================================获取评价结束============================================================-->
+
+    <!--搜索医生-->
+    <select id="searchDoctors" parameterType="com.fh.entity.zxys.ZxysSearchVO" resultType="com.fh.entity.zxys.ZxysDoctorBO">
+        select * from zxys_authentication a LEFT JOIN member u on a.doctor_id = u.member_id
+        <if test='orderType != null and orderType != "" and orderType == "回复速度最快"'>
+            LEFT JOIN zxys_message m on m.from_id = a.doctor_id
+        </if>
+        where
+        (a.doctor_name like '%${condition}%' or a.hospital_name like '%${condition}%' or a.office like '%${condition}%' or a.adept like '%${condition}%')
+            <if test='officeName != null and officeName != "" and officeName != "全部科室"'>
+               and a.office like '%${officeName}%'
+            </if>
+            <if test='area != null and area != "" and area != "全部地区"'>
+                and a.area like '%${area}%'
+            </if>
+
+            /*咨询方式*/
+            <if test='consult != null and consult != "" and consult == "图文咨询"'>
+                and a.picture_text_consult != 0
+            </if>
+            <if test='consult != null and consult != "" and consult == "电话咨询"'>
+                and a.mobile_consult != 0
+            </if>
+            <if test='consult != null and consult != "" and consult == "私人医生"'>
+                and a.private_doctor_consult != 0
+            </if>
+            <if test='consult != null and consult != "" and consult == "预约就诊"'>
+                and a.appointment_consult != 0
+            </if>
+            <if test='consult != null and consult != "" and consult == "视频咨询"'>
+                and a.video_consult != 0
+            </if>
+            <if test='consult != null and consult != "" and consult == "院后指导"'>
+                and a.hospital_post_consult != 0
+            </if>
+
+            /*排序*/
+            <if test='orderType != null and orderType != "" and orderType == "排序"'>
+
+            </if>
+            <if test='orderType != null and orderType != "" and orderType == "智能排序"'>
+                order by reception_num desc
+            </if>
+            <if test='orderType != null and orderType != "" and orderType == "评价最高"'>
+                order by three_star_num desc
+            </if>
+            <if test='orderType != null and orderType != "" and orderType == "回复速度最快"'>
+                group by m.from_id  order by avg(send_time - receive_time)
+            </if>
+            <if test='orderType != null and orderType != "" and orderType == "价格由低到高"'>
+                order by min_price
+            </if>
+            <if test='orderType != null and orderType != "" and orderType == "价格由高到低"'>
+                order by min_price desc
+            </if>
+        limit #{startIndex},#{pageSize}
+    </select>
+
+    <!--通过doctor_id查询医生信息-->
+    <select id="queryDoctorByIdNew" parameterType="com.fh.entity.zxys.ZxysDoctorVO" resultType="com.fh.entity.zxys.ZxysDoctorBO">
+        select * from zxys_authentication a LEFT JOIN member u on a.doctor_id = u.member_id where a.doctor_id = #{doctorId}
+    </select>
+
+    <!--更新对话咨询状态（是否结束）-->
+    <update id="updateIsEnd" parameterType="com.fh.entity.zxys.ZxysMessageVo"  >
+       UPDATE  zxys_message SET  is_end = #{is_end} WHERE session_id=#{session_id}
+    </update>
+
+    <!--根据医院名称和地区查询医院-->
+    <select id="queryHospitalLevelByNameAndArea" parameterType="com.fh.entity.zxys.ZxysHospitalVO" resultType="com.fh.entity.zxys.ZxysHospitalBO" >
+        SELECT * FROM zxys_hospital where hospital_name like '%${hospitalName}%' and hospital_area like '%${hospitalArea}%'
+    </select>
+
+    <!--设置用户消息是否公开-->
+    <update id="setIsOpenForMessage" parameterType="com.fh.entity.zxys.ZxysMessageVo" >
+        update zxys_message set is_open = #{is_open} where session_id = #{session_id}
+    </update>
+
+    <!--保存评价记录-->
+    <update id="saveCommentRecord" parameterType="com.fh.entity.zxys.ZxysCommentContentVO" >
+        update zxys_record set status = 5, create_time = NOW(), comment_content = #{commentContent},label = #{label},start_level = #{startLevel} where session_id = #{sessionId}
+    </update>
+
+    <!--查询当前数据库中最大的session_id-->
+    <select id="queryMaxSessionId" resultType="java.lang.Integer" >
+        SELECT MAX(session_id) FROM zxys_message where is_end = 1
+    </select>
+
+    <!--设置回话是否结束-->
+    <update id="setIsCloseForMessage" parameterType="com.fh.entity.zxys.ZxysMessageVo" >
+        update zxys_message set is_end =1, session_id = #{session_id}  where ((from_id =#{from_id}  and to_id =#{to_id}) or (from_id =#{to_id} and to_id = #{from_id})) and is_end = 0
+    </update>
+
+    <!--更新记录表中的session_id字段-->
+    <select id="updateSessionIdForRecord" parameterType="com.fh.entity.zxys.ZxysMessageVo">
+        update zxys_record set session_id=#{session_id} where ((doctor_id=#{from_id} and patient_id=#{to_id}) or (doctor_id=#{to_id} and patient_id=#{from_id} )) and status=4
+    </select>
+
+    <!--通过session_id查询医生的id-->
+    <select id="queryZxysRecordBySessionId" parameterType="com.fh.entity.zxys.ZxysMessageVo" resultType="com.fh.entity.zxys.ZxysRecordBO">
+        select * from zxys_record where session_id = #{session_id}
+    </select>
+
+    <!--取所有评论标签-->
+    <select id="queryVariable" parameterType="java.lang.Integer" resultType="com.fh.entity.zxys.ZxysVariableBO" >
+        select * from zxys_variable where type = #{type}
+    </select>
+
+    <!--生成免费问诊记录-->
+    <insert id="saveFreeConsultRecord" parameterType="com.fh.entity.zxys.ZxysRecordVO" >
+        insert into zxys_record doctor_id, doctor_name, patient_id, patient_name, patient_sex, patient_age,
+        office, patient_ordertime, patient_describe, patient_pictures, fee, status,
+        consultation_type, patient_hotdisease, trade_no,
+        VALUES (#{doctorId},#{doctorName},#{patientId},#{patientName},#{patientSex},#{patientAge},#{office},now(),
+        #{patientDescribe},#{patientPictures},0,3,#{consultationType},#{patientHotDisease},#{tradeNo})
+    </insert>
+
+    <!--添加新的就诊人-->
+    <insert id="addNewFriend" parameterType="com.fh.entity.zxys.ZxysUserVO" >
+       insert into zxys_friend (user_id, friend_name, friend_sex, friend_age, user_type, friend_type) VALUES (#{userId}, #{trueName}, #{sex}, #{age}, #{type}, #{friend_type})
+    </insert>
+
+    <!--通过用户编号查询用户的好友列表-->
+    <select id="queryFriendListByUserId" parameterType="com.fh.entity.zxys.ZxysUserVO" resultType="com.fh.entity.zxys.ZxysUserBO" >
+        select user_id, friend_name true_name,  if(friend_sex = 2, '女', '男') sex, friend_age age  from zxys_friend where user_id = #{userId}
+    </select>
+
+    <!--通过用户id查询用户-->
+    <select id="queryMemberById" parameterType="java.lang.Integer" resultType="com.fh.entity.zxys.ZxysUserBO" >
+        select
+        member_truename true_name,
+		if(member_sex = 2, '女', '男') sex,
+        (year(now())-year(member_birthday)-1) + (DATE_FORMAT(NOW(), '%m%d') >= DATE_FORMAT(member_birthday, '%m%d')) as age
+        from
+        member where member_id = #{userId} and type = 1
+    </select>
+
+    <!--通过好友姓名删除好友-->
+    <delete id="deleteFriendByName" parameterType="com.fh.entity.zxys.ZxysUserVO" >
+        delete from zxys_friend where friend_name = #{trueName} and user_id = #{userId}
+    </delete>
+
+    <!--获取患者的订单列表-->
+    <select id="queryConsultRecordForPatient" parameterType="com.fh.entity.zxys.ZxysRecordVO" resultType="com.fh.entity.zxys.ZxysRecordBO" >
+        select * from zxys_record where  (doctor_name like '%${condition}%' or office like '%${condition}%' or patient_describe like '%${condition}%' or trade_no like '%${condition}%')
+        and patient_id = #{patientId} and is_delete = 0
+        <if test="status != null and status != ''">
+            and status = #{status}
+        </if>
+        order by  patient_ordertime desc limit #{startIndex}, #{pageSize}
+    </select>
+
+    <!--通过token查询用户信息-->
+    <select id="findMemberByToken" parameterType="com.fh.entity.vo.TokenVo" resultType="com.fh.entity.bo.UserInfoBO" >
+        select * from mb_user_token where token = #{token}
+    </select>
+
+    <!--通过用户id查询用户信息-->
+    <select id="findMemberByMemberId" parameterType="com.fh.entity.bo.UserInfoBO" resultType="com.fh.entity.bo.UserInfoBO">
+        select member_name , member_id, team_sign, inviter_id, member_bankcard, member_passwd,
+        member_mobile, member_email, member_truename, member_address,member_area, member_sex, member_idcard,
+        member_bankname, member_time, member_old_login_time, member_login_time, member_area, member_cardtype,
+        member_login_num, member_paypwd, securities_team, securities_id,
+        (year(now())-year(member_birthday)-1) + (DATE_FORMAT(NOW(), '%m%d') >= DATE_FORMAT(member_birthday, '%m%d')) as member_age from member where member_id = #{member_id}
+    </select>
+
+
+    <!--***************************************************************************环信**************************************************************************************-->
+    <!--保存消息-->
+    <insert id="saveMessage" parameterType="com.fh.entity.zxys.ZxysMessageVo" >
+        insert into zxys_message (content, type, from_id, to_id, send_time, is_group, is_end) VALUES(#{content},#{type},#{from_id},#{to_id},#{send_time},0,0)
+    </insert>
+
+
+    <!--***************************************************************************支付开始**********************************************************************************-->
+    <!--通过订单号查询订单详情-->
+    <select id="queryRecordByOutTradeNo" parameterType="com.fh.entity.zxys.ZxysRecordVO" resultType="com.fh.entity.zxys.ZxysRecordBO" >
+        select * from zxys_record where out_trade_no = #{outTradeNo}
+    </select>
+
+    <!--保存用户的订单记录-->
+    <insert id="saveZxysRecord" parameterType="com.fh.entity.zxys.ZxysRecordVO" >
+        insert into zxys_record (doctor_id,  doctor_name, patient_id, patient_name, patient_sex, patient_age, patient_area,
+         office, patient_ordertime, fee, status, payway, consultation_type,order_time, pay_time, out_trade_no)
+        VALUES(#{doctorId},#{doctorName},#{patientId},#{patientName},#{patientSex},#{patientAge},#{patientArea},#{office},now(),#{fee},2,#{payWay},#{consultationType},now(),now(),#{outTradeNo})
+    </insert>
+
+    <!--更新交易流水号-->
+    <update id="updateTradeNo" parameterType="com.fh.entity.zxys.ZxysRecordBO" >
+        update zxys_record set trade_no = #{trade_no},status = 3 where out_trade_no = #{outTradeNo}
+    </update>
+
+    <!--通过订单号查询订单信息-->
+    <select id="checkZxysRecordByOutTradeNo" parameterType="com.fh.entity.zxys.ZxysRecordVO" resultType="com.fh.entity.zxys.ZxysRecordBO">
+        select * from zxys_record where out_trade_no = #{outTradeNo} and status = 3
+    </select>
+
+    <!--更新认证表中的被浏览次数-->
+    <update id="updateBrowsingNum" parameterType="com.fh.entity.zxys.ZxysDoctorVO" >
+        update zxys_authentication set browsing_num = browsing_num + 1 where doctor_id = #{doctorId}
+    </update>
+
+    <!--更新认证表中的接诊量字段-->
+    <update id="updateReceptionNum" parameterType="com.fh.entity.zxys.ZxysDoctorVO">
+        update zxys_authentication set reception_num = reception_num + 1 where doctor_id = #{doctorId}
+    </update>
+
+</mapper>

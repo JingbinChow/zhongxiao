@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="Cash">
+
+    <select id="queryUseridByToken" parameterType="com.fh.entity.vo.WithdrawCashVo" resultType="java.lang.Integer">
+                SELECT member_id  from mb_user_token where token=#{token}
+        </select>
+    <!--冻结提现金额-->
+    <update id="freeze_predeposit" parameterType="com.fh.entity.vo.WithdrawCashVo">
+        update member SET available_predeposit=available_predeposit-#{cash},freeze_predeposit=freeze_predeposit+#{cash} where member_id=#{member_id}
+        </update>
+    <!--查询钱包余额-->
+    <select id="queryAvailable_predeposit" parameterType="com.fh.entity.vo.WithdrawCashVo"
+            resultType="com.fh.entity.bo.QueryMemberCashInfoBo">
+                select available_predeposit,member_name,member_truename,member_bankname,member_bankcard,member_id from member where member_id=#{member_id}
+        </select>
+    <insert id="addCashRecord" parameterType="com.fh.entity.bo.QueryCashListBo">
+      insert into pd_cash (pdc_sn,pdc_member_id,pdc_member_name,pdc_amount,pdc_bank_name,pdc_bank_no,pdc_bank_user,pdc_add_time,pdc_payment_state) values(#{pdc_sn},#{pdc_member_id},#{pdc_member_name},#{pdc_amount},#{pdc_bank_name},#{pdc_bank_no},#{pdc_bank_user},#{pdc_add_time},#{pdc_payment_state})
+        </insert>
+<insert id="reduceFreezeCashLog" parameterType="com.fh.entity.vo.CashLogVo">
+    insert into pd_log (lg_member_id,lg_member_name,lg_admin_name,lg_type,lg_av_amount,lg_freeze_amount,lg_add_time,lg_desc) values(#{lg_member_id},#{lg_member_name},#{lg_admin_name},#{lg_type},#{lg_av_amount},#{lg_freeze_amount},#{lg_add_time},#{lg_desc})
+</insert>
+
+    <select id="findToken" parameterType="com.fh.entity.vo.TokenVo" resultType="com.fh.entity.bo.UserInfoBO">
+        select * from mb_user_token  where token=#{token}
+    </select>
+
+    <select id="findQueryCashListBo" parameterType="com.fh.entity.vo.TokenVo" resultType="com.fh.entity.bo.QueryCashListBo">
+        select * from pd_cash where pdc_member_id=#{userid} Order by pdc_add_time desc
+        <if test="pageSize!=0 and pageIndex!=0">
+            limit #{pageIndex},#{pageSize}
+        </if>
+    </select>
+
+</mapper>

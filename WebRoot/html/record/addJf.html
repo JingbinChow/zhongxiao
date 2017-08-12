@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=8" >
+	<title>项目合同列表页</title>
+	<script type="text/javascript" src="../../script/easyui/jquery-1.11.0.min.js"></script>
+	<script type="text/javascript" src="../../script/easyui/jquery.cookie.js"></script>
+	<script type="text/javascript" src="../../script/easyui/jquery.easyui.min.js"></script>
+	<script type="text/javascript" src="../../script/easyui/easyui-lang-zh_CN.js"></script>
+	<script type="text/javascript" src="../../js/chkUtil.js"></script>
+	<script type="text/javascript" src="../../script/easyui/common.js"></script>
+	<link rel="stylesheet" type="text/css" href="../../css/easyuicss/easyui.css" />
+	<link rel="stylesheet" type="text/css" href="../../css/easyuicss/icon.css" />
+	<link href="../style/style.css" rel="stylesheet" type="text/css" />
+	<link rel="stylesheet" type="text/css" href="../../css/bootstrap.min.css">
+	<link rel="stylesheet" type="text/css"
+		  href="../../css/bootstrap-theme.min.css">
+	<script type="text/javascript" src="../js/addJF.js"></script>
+
+
+</head>
+<body>
+<div id="container"  style="height: 650px">
+	<div class="input" style="">
+		<div align="center">
+			<h1>交易记录列表</h1>
+		</div>
+		<input type=hidden id="userid" name="userid">
+		<div align="center">
+			<tr>
+				<td>
+					<label>用 户 名:</label>
+					<input type="text" id="username" name="username" disabled="disabled">
+				</td>
+			</tr><br><br>
+			<tr>
+				<td>
+					<label>姓&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;名:</label>
+					<input type="text" id="name" name="name"  onblur="findJb()" >
+				</td>
+			</tr><br><br>
+			<tr>
+				<td>
+					<label>银行卡号:</label>
+					<input type="text" id="bankcard" name="bankcard" onkeyup="if(/\D/.test(this.value)){alert('只能输入数字');this.value='0';}"  >
+				</td>
+			</tr><br><br>
+			<tr>
+				<td>
+					<label>开户银行:</label>
+					<input type="text" id="bankname" name="bankname"  onblur="findJb()" disabled="disabled">
+				</td>
+			</tr><br><br>
+			<tr>
+				<td>
+					<label>交易金额:</label>
+					<input type="text" id="amount" name="amount"  onkeyup="if(/\D/.test(this.value)){alert('只能输入数字');this.value='0';}" >
+				</td>
+			</tr><br><br>
+			<tr>
+				<td>
+					<label>流&nbsp;&nbsp;水&nbsp;&nbsp;号:</label>
+					<input type="text" id="bankTransaction" name="bankTransaction">
+				</td>
+			</tr><br><br>
+			<tr>
+				<td>
+					<label>转账日期:</label>
+					<input id="dd" type="text" class="easyui-datebox" required="required"/>
+				</td>
+			</tr><br><br>
+			<tr>
+			<td>
+				<label>操作员&nbsp;id:</label>
+				<input  id="operateorid" name="operateorid"  disabled="disabled">
+			</td>
+		</tr><br><br>
+			<tr>
+			<td >
+				<a href="javascript:void(0);" style="float: right;margin-left: 10px;"><img style="border: 0px;" onclick="back()" src="../../images/button/fh2.gif" /></a>
+			</td>
+			</tr>
+			<td >
+				<a href="javascript:void(0);" style="float: right;margin-left: 10px;"><img style="border: 0px;" onclick="save()" src="../../images/button/baocun.gif" /></a>
+			</td>
+			</tr>
+		</div>
+
+    <div>
+
+</div>
+</body>
+</html>
